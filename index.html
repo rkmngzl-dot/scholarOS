@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Scholar OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<!-- clean html, no electron -->
+<style>
+:root{
+  --bg:#080b14;--s1:#0f1220;--s2:#151828;--s3:#1c2035;
+  --border:#252840;--border2:#2f3355;
+  --gold:#f0b429;--gold2:#ffd166;
+  --blue:#4f8ef7;--purple:#8b5cf6;--green:#22c55e;--red:#ef4444;--teal:#06b6d4;--orange:#f59e0b;
+  --text:#e2e8f0;--muted:#64748b;--muted2:#94a3b8;
+  --school:#3b82f6;--work:#10b981;--personal:#f59e0b;--health:#ef4444;--other:#8b5cf6;
+  --bronze:#cd7f32;--silver:#9ca3af;
+  --HOUR:64px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);}
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 60% 40% at 15% 30%,rgba(79,142,247,.06),transparent),
+  radial-gradient(ellipse 50% 60% at 85% 70%,rgba(139,92,246,.05),transparent),
+  radial-gradient(ellipse 40% 30% at 50% 10%,rgba(240,180,41,.03),transparent);
+  pointer-events:none;z-index:0;}
+
+/* ══ AUTH SCREEN ══ */
+#authScreen{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:#05080f;overflow:hidden;transition:opacity .3s;}
+#authScreen.hidden{display:none!important;pointer-events:none!important;visibility:hidden!important;}
+#authScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(139,92,246,.08),transparent);}
+.auth-box{position:relative;z-index:1;width:380px;max-width:90vw;padding:40px 36px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:24px;backdrop-filter:blur(20px);box-shadow:0 40px 80px rgba(0,0,0,.5);}
+.auth-logo{text-align:center;margin-bottom:28px;}
+.auth-logo-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:#fff;letter-spacing:2px;}
+.auth-logo-sub{font-size:11px;color:rgba(255,255,255,.25);letter-spacing:3px;margin-top:4px;}
+.auth-tabs{display:flex;gap:0;margin-bottom:28px;background:rgba(255,255,255,.04);border-radius:10px;padding:3px;}
+.auth-tab{flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;}
+.auth-tab.active{background:rgba(139,92,246,.25);color:#a78bfa;border:1px solid rgba(139,92,246,.3);}
+.auth-field{margin-bottom:14px;}
+.auth-field label{display:block;font-size:10px;font-weight:600;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:6px;text-transform:uppercase;}
+.auth-field input{width:100%;padding:11px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:13px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;}
+.auth-field input:focus{border-color:rgba(139,92,246,.5);}
+.auth-submit{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;margin-top:6px;transition:all .2s;box-shadow:0 8px 24px rgba(139,92,246,.3);}
+.auth-submit:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(139,92,246,.4);}
+.auth-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.auth-error{font-size:12px;color:#f87171;text-align:center;margin-top:10px;min-height:18px;}
+.auth-success{font-size:12px;color:#4ade80;text-align:center;margin-top:10px;min-height:18px;}
+.auth-user-badge{position:fixed;bottom:16px;right:16px;z-index:100;padding:6px 12px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:11px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:8px;}
+.auth-signout{background:none;border:none;color:rgba(255,255,255,.25);font-size:10px;cursor:pointer;font-family:'Outfit',sans-serif;padding:2px 4px;transition:color .2s;}
+.auth-signout:hover{color:#f87171;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;flex-shrink:0;}
+.sync-dot.syncing{background:#f0b429;box-shadow:0 0 6px #f0b429;animation:pulse .8s ease-in-out infinite;}
+.sync-dot.offline{background:#ef4444;box-shadow:0 0 6px #ef4444;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+#modeScreen{position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#05080f;overflow:hidden;}
+#modeScreen .stars{position:absolute;inset:0;pointer-events:none;}
+#modeScreen .star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d,3s) ease-in-out infinite var(--delay,0s);}
+@keyframes twinkle{0%,100%{opacity:.1;transform:scale(1);}50%{opacity:.8;transform:scale(1.3);}}
+.mode-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,5vw,52px);font-weight:700;color:#fff;text-align:center;margin-bottom:8px;letter-spacing:3px;text-shadow:0 0 40px rgba(120,180,255,.4);}
+.mode-sub{font-size:14px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:60px;letter-spacing:2px;}
+.mode-cards{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;padding:0 20px;}
+.mode-card{width:240px;padding:36px 28px;border-radius:24px;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);backdrop-filter:blur(20px);transition:all .3s cubic-bezier(.34,1.56,.64,1);text-align:center;position:relative;overflow:hidden;}
+.mode-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s;}
+.mode-card:hover{transform:translateY(-8px) scale(1.03);border-color:rgba(255,255,255,.2);}
+.mode-card:hover::before{opacity:1;}
+.mode-card.calendar-card::before{background:radial-gradient(ellipse at 50% 0%,rgba(79,142,247,.25),transparent 70%);}
+.mode-card.focus-card::before{background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,.25),transparent 70%);}
+.mode-card:hover.calendar-card{box-shadow:0 20px 60px rgba(79,142,247,.25),inset 0 1px 0 rgba(255,255,255,.1);}
+.mode-card:hover.focus-card{box-shadow:0 20px 60px rgba(139,92,246,.25),inset 0 1px 0 rgba(255,255,255,.1);}
+.mode-icon{font-size:48px;margin-bottom:16px;display:block;filter:drop-shadow(0 0 20px currentColor);}
+.mode-card-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;margin-bottom:8px;letter-spacing:1px;}
+.mode-card-desc{font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;}
+.mode-card.calendar-card .mode-card-title{color:#4f8ef7;}
+.mode-card.focus-card .mode-card-title{color:#a78bfa;}
+.mode-badge{display:inline-block;margin-top:14px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;}
+.calendar-card .mode-badge{background:rgba(79,142,247,.15);color:#4f8ef7;border:1px solid rgba(79,142,247,.3);}
+.focus-card .mode-badge{background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);}
+
+/* ══ FOCUS MODE ══ */
+#focusApp{display:none;height:100vh;background:#06040f;flex-direction:column;overflow:hidden;font-family:'Outfit',sans-serif;}
+.focus-bg{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.focus-bg-orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orbFloat var(--d,8s) ease-in-out infinite alternate;}
+@keyframes orbFloat{0%{transform:translate(0,0) scale(1);}100%{transform:translate(var(--tx,20px),var(--ty,-20px)) scale(1.1);}}
+.focus-header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid rgba(255,255,255,.05);}
+.focus-logo{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:rgba(255,255,255,.8);letter-spacing:2px;display:flex;align-items:center;gap:8px;}
+.focus-logo-dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#6366f1);box-shadow:0 0 12px rgba(139,92,246,.8);}
+.focus-back-btn{padding:7px 16px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;}
+.focus-back-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
+.focus-body{position:relative;z-index:5;flex:1;display:flex;overflow:hidden;}
+
+/* Focus Sidebar */
+.focus-sidebar{width:280px;min-width:280px;padding:24px 20px;border-right:1px solid rgba(255,255,255,.05);overflow-y:auto;display:flex;flex-direction:column;gap:20px;}
+.focus-sidebar::-webkit-scrollbar{width:2px;}
+.focus-sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);}
+.fs-section-title{font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.25);text-transform:uppercase;margin-bottom:10px;}
+.session-preset{padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:all .2s;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.session-preset:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);}
+.session-preset.active-preset{background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.4);box-shadow:0 0 20px rgba(139,92,246,.1);}
+.sp-icon{font-size:22px;flex-shrink:0;}
+.sp-info{flex:1;}
+.sp-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.85);margin-bottom:2px;}
+.sp-detail{font-size:10px;color:rgba(255,255,255,.35);}
+.sp-xp{font-size:10px;font-weight:700;color:#a78bfa;margin-left:auto;}
+.focus-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.focus-stat{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);text-align:center;}
+.focus-stat-val{font-size:20px;font-weight:700;color:#fff;font-family:'Cormorant Garamond',serif;}
+.focus-stat-lbl{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.5px;margin-top:2px;}
+.focus-history{max-height:200px;overflow-y:auto;}
+.focus-history::-webkit-scrollbar{width:2px;}
+.fh-item{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.03);margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.fh-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.fh-text{font-size:10px;color:rgba(255,255,255,.45);flex:1;}
+.fh-time{font-size:9px;color:rgba(255,255,255,.2);}
+
+/* Focus Main Timer Area */
+.focus-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;position:relative;}
+.flight-path{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.plane-trail{position:absolute;top:30%;left:-10%;animation:flyAcross var(--fly-dur,0s) linear forwards;opacity:0;}
+.plane-trail.flying{opacity:1;}
+@keyframes flyAcross{0%{left:-10%;opacity:0;}5%{opacity:1;}90%{opacity:1;}100%{left:110%;opacity:0;}}
+.plane-emoji{font-size:28px;filter:drop-shadow(0 0 12px rgba(167,139,250,.8));}
+.trail-line{position:absolute;top:50%;left:-200px;width:200px;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.3));transform:translateY(-50%);}
+
+.focus-session-label{font-size:11px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:24px;}
+.timer-ring-wrap{position:relative;width:280px;height:280px;margin-bottom:32px;}
+.timer-svg{width:280px;height:280px;transform:rotate(-90deg);}
+.timer-track{fill:none;stroke:rgba(255,255,255,.05);stroke-width:6;}
+.timer-progress{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .5s ease, stroke .5s ease;}
+.timer-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.timer-time{font-family:'Cormorant Garamond',serif;font-size:58px;font-weight:700;color:#fff;line-height:1;letter-spacing:-2px;text-shadow:0 0 40px rgba(167,139,250,.4);}
+.timer-phase{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:2px;margin-top:8px;text-transform:uppercase;}
+.timer-session-count{font-size:11px;color:rgba(167,139,250,.6);margin-top:4px;}
+
+.timer-controls{display:flex;gap:16px;align-items:center;margin-bottom:28px;}
+.tc-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s cubic-bezier(.34,1.56,.64,1);}
+.tc-btn:hover{transform:scale(1.1);}
+.tc-main{width:72px;height:72px;font-size:26px;background:linear-gradient(135deg,#8b5cf6,#6366f1);box-shadow:0 0 30px rgba(139,92,246,.5);}
+.tc-secondary{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);}
+.tc-secondary:hover{background:rgba(255,255,255,.12);}
+
+.focus-task-chip{padding:8px 18px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s;}
+.focus-task-chip:hover{background:rgba(255,255,255,.1);color:#fff;}
+.task-chip-active{background:rgba(139,92,246,.15)!important;border-color:rgba(139,92,246,.4)!important;color:#a78bfa!important;}
+
+/* Session type pills */
+.phase-pills{display:flex;gap:8px;margin-bottom:28px;}
+.phase-pill{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid transparent;transition:all .2s;}
+.pp-focus{background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.3);color:#a78bfa;}
+.pp-break{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80;}
+.pp-long{background:rgba(251,146,60,.1);border-color:rgba(251,146,60,.3);color:#fb923c;}
+.pp-active{transform:scale(1.05);box-shadow:0 0 14px rgba(167,139,250,.2);}
+
+/* Ambient sound chips */
+
+/* XP toast */
+.xp-toast{position:fixed;top:80px;right:24px;z-index:999;padding:12px 20px;border-radius:14px;background:linear-gradient(135deg,rgba(139,92,246,.9),rgba(99,102,241,.9));backdrop-filter:blur(10px);color:#fff;font-weight:700;font-size:14px;box-shadow:0 8px 32px rgba(139,92,246,.4);animation:toastIn .4s cubic-bezier(.34,1.56,.64,1) forwards;pointer-events:none;}
+@keyframes toastIn{0%{opacity:0;transform:translateX(60px);}100%{opacity:1;transform:translateX(0);}}
+@keyframes toastOut{0%{opacity:1;transform:translateX(0);}100%{opacity:0;transform:translateX(60px);}}
+.xp-toast.out{animation:toastOut .3s ease forwards;}
+
+/* Completion overlay */
+.session-complete{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;background:rgba(6,4,15,.85);backdrop-filter:blur(10px);animation:fIn .3s ease;}
+.sc-box{text-align:center;padding:48px 56px;border-radius:28px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);box-shadow:0 40px 100px rgba(0,0,0,.6);animation:mUp .4s cubic-bezier(.34,1.56,.64,1);}
+.sc-emoji{font-size:64px;margin-bottom:16px;display:block;}
+.sc-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:8px;}
+.sc-sub{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:28px;}
+.sc-xp{font-size:36px;font-weight:700;color:#a78bfa;margin-bottom:24px;font-family:'Cormorant Garamond',serif;}
+.sc-btn{padding:12px 32px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;transition:all .2s;}
+.sc-btn-primary{background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;box-shadow:0 8px 24px rgba(139,92,246,.4);margin-right:10px;}
+.sc-btn-secondary{background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1);}
+.sc-btn:hover{transform:translateY(-2px);}
+
+
+/* ══ SIDEBAR ══ */
+.sidebar{width:240px;min-width:240px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.sidebar::-webkit-scrollbar{width:2px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border2);}
+
+.logo{padding:22px 18px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.logo-text{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:var(--gold);letter-spacing:1.5px;}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:.5px;margin-top:1px;}
+
+/* avatar card */
+.avatar-card{padding:16px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s;}
+.avatar-card:hover{background:rgba(255,255,255,.02);}
+.avatar-wrap{position:relative;width:54px;height:54px;margin:0 auto 10px;}
+.avatar-ring{position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(var(--gold),var(--purple),var(--blue),var(--gold));animation:spin 6s linear infinite;opacity:.7;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.avatar-inner{position:absolute;inset:2px;border-radius:50%;background:linear-gradient(135deg,var(--s3),var(--s2));display:flex;align-items:center;justify-content:center;font-size:26px;}
+.lv-badge{position:absolute;bottom:-4px;right:-4px;background:var(--gold);color:#1a0e00;font-family:'Cormorant Garamond',serif;font-size:8px;font-weight:700;padding:2px 5px;border-radius:4px;border:2px solid var(--s1);}
+.avatar-name{text-align:center;font-weight:600;font-size:13px;margin-bottom:2px;}
+.avatar-class{text-align:center;font-size:10px;color:var(--blue);letter-spacing:.5px;margin-bottom:10px;}
+.xp-bar-wrap{margin-bottom:4px;}
+.xp-bar-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:4px;}
+.xp-bar-labels span:last-child{color:var(--blue);}
+.xp-track{height:5px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.xp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .8s cubic-bezier(.34,1.56,.64,1);position:relative;}
+.xp-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:sh 2s infinite;}
+@keyframes sh{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+
+/* sidebar nav */
+.sb-nav{padding:10px 10px;border-bottom:1px solid var(--border);}
+.sb-link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted2);transition:all .15s;margin-bottom:2px;border:none;background:transparent;width:100%;text-align:left;font-family:'Outfit',sans-serif;}
+.sb-link:hover{background:var(--s3);color:var(--text);}
+.sb-link.active{background:linear-gradient(135deg,rgba(79,142,247,.18),rgba(139,92,246,.12));color:var(--text);border:1px solid rgba(79,142,247,.2);}
+.sb-link-icon{width:18px;text-align:center;font-size:14px;flex-shrink:0;}
+
+/* stats mini */
+.sb-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:12px 12px;border-bottom:1px solid var(--border);}
+.sb-stat{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 6px;text-align:center;}
+.sb-stat-val{font-size:16px;font-weight:700;line-height:1;}
+.sb-stat-lbl{font-size:8px;color:var(--muted);margin-top:2px;letter-spacing:.3px;text-transform:uppercase;}
+
+/* streak badge */
+.streak-card{margin:10px 12px;background:linear-gradient(135deg,rgba(240,180,41,.12),rgba(240,180,41,.05));border:1px solid rgba(240,180,41,.25);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;}
+.streak-fire{font-size:20px;animation:pulse 1.5s ease infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.streak-info{flex:1;}
+.streak-num{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--gold);line-height:1;}
+.streak-lbl{font-size:9px;color:var(--muted);letter-spacing:.5px;}
+
+/* boss alert */
+.boss-alert{margin:0 12px 8px;background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(139,92,246,.1));border:1px solid rgba(239,68,68,.35);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .2s;}
+.boss-alert:hover{border-color:rgba(239,68,68,.6);transform:scale(1.01);}
+.boss-alert-title{font-size:11px;font-weight:700;color:#f87171;letter-spacing:.5px;margin-bottom:2px;}
+.boss-alert-sub{font-size:10px;color:var(--muted);}
+
+/* ══ MAIN ══ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+
+/* topbar */
+.topbar{padding:0 24px;height:54px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(15,18,32,.95);backdrop-filter:blur(12px);flex-shrink:0;gap:12px;}
+.nav-tabs{display:flex;gap:1px;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:3px;}
+.nav-tab{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all .15s;font-family:'Outfit',sans-serif;letter-spacing:.2px;white-space:nowrap;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{background:var(--s1);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4);}
+.topbar-right{display:flex;gap:8px;align-items:center;}
+.date-nav{display:flex;align-items:center;gap:6px;}
+.date-label{font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:600;color:var(--text);min-width:160px;text-align:center;}
+.arr{width:26px;height:26px;border-radius:6px;background:var(--s2);border:1px solid var(--border);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.arr:hover{border-color:var(--blue);color:var(--blue);}
+.today-btn{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;background:var(--s2);border:1px solid var(--border);color:var(--muted2);cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;}
+.today-btn:hover{border-color:var(--blue);color:var(--blue);}
+
+/* action buttons */
+.btn{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .2s;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;box-shadow:0 3px 12px rgba(79,142,247,.25);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(79,142,247,.35);}
+.btn-teal{background:linear-gradient(135deg,var(--teal),#0284c7);color:#fff;}
+.btn-orange{background:linear-gradient(135deg,var(--orange),#d97706);color:#fff;}
+.btn-red{background:linear-gradient(135deg,var(--red),#dc2626);color:#fff;}
+.btn-ghost{background:var(--s2);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--blue);}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px;}
+
+/* ══ VIEWS ══ */
+.view{flex:1;overflow:hidden;display:none;}
+.view.active{display:flex;flex-direction:column;}
+
+/* ── CALENDAR ── */
+.cal-body{flex:1;overflow-y:auto;padding:16px 20px;}
+.cal-body::-webkit-scrollbar{width:3px;}
+.cal-body::-webkit-scrollbar-thumb{background:var(--border2);}
+.wk-header{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+.wk-lbl{text-align:center;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1px;padding:4px 0;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.day-cell{min-height:96px;background:var(--s1);border:1px solid var(--border);border-radius:9px;padding:6px;cursor:pointer;transition:all .18s;overflow:hidden;position:relative;}
+.day-cell:hover{border-color:var(--blue);background:var(--s2);}
+.day-cell.other{opacity:.2;pointer-events:none;}
+.day-cell.today{border-color:var(--gold);box-shadow:0 0 14px rgba(240,180,41,.1);}
+.day-cell.today .day-n{color:var(--gold);}
+.day-cell.has-stuff{border-color:rgba(79,142,247,.3);}
+.day-n{font-size:11px;font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
+.today-pip{width:4px;height:4px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px var(--gold);}
+.cal-pill{font-size:8px;padding:1px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:2px;}
+.cal-pill.q-common{background:rgba(100,116,139,.2);border:1px solid rgba(100,116,139,.3);}
+.cal-pill.q-rare{background:rgba(79,142,247,.2);border:1px solid rgba(79,142,247,.3);color:#93c5fd;}
+.cal-pill.q-epic{background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.3);color:#c4b5fd;}
+.cal-pill.q-legendary{background:rgba(240,180,41,.18);border:1px solid rgba(240,180,41,.35);color:#fde68a;}
+.cal-pill.q-done{opacity:.4;text-decoration:line-through;}
+.cal-pill.b-school{background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.35);color:#93c5fd;}
+.cal-pill.b-work{background:rgba(16,185,129,.18);border:1px solid rgba(16,185,129,.35);color:#6ee7b7;}
+.cal-pill.b-personal{background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.35);color:#fcd34d;}
+.cal-pill.b-health{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.35);color:#fca5a5;}
+.cal-pill.b-other{background:rgba(139,92,246,.18);border:1px solid rgba(139,92,246,.35);color:#c4b5fd;}
+.cal-more{font-size:8px;color:var(--muted);margin-top:1px;}
+.cal-dot{width:3px;height:3px;border-radius:50%;flex-shrink:0;}
+.dot-common{background:var(--muted);}
+.dot-rare{background:var(--blue);}
+.dot-epic{background:var(--purple);}
+.dot-legendary{background:var(--gold);}
+
+/* ── DAY PLANNER ── */
+.day-layout{flex:1;overflow:hidden;display:flex;gap:0;}
+.day-tl-col{flex:1;overflow-y:auto;padding:16px 0 16px 20px;min-width:0;}
+.day-tl-col::-webkit-scrollbar{width:3px;}
+.day-tl-col::-webkit-scrollbar-thumb{background:var(--border2);}
+.day-title{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--gold);margin-bottom:14px;}
+.tl-container{position:relative;margin-left:54px;border-left:1px solid var(--border2);}
+.tl-hour-row{height:var(--HOUR);position:relative;border-bottom:1px solid rgba(37,40,64,.5);}
+.tl-hour-row::after{content:'';position:absolute;bottom:50%;left:0;right:0;border-bottom:1px dashed rgba(37,40,64,.3);}
+.tl-lbl{position:absolute;left:-54px;top:-8px;width:48px;text-align:right;font-size:10px;color:var(--muted);font-weight:500;padding-right:8px;}
+/* time block events */
+.tl-block{position:absolute;left:6px;right:6px;border-radius:7px;padding:5px 8px;cursor:pointer;transition:filter .15s,transform .15s;border-left:3px solid;overflow:hidden;}
+.tl-block:hover{filter:brightness(1.15);transform:translateX(2px);}
+.tl-block.cat-school{background:rgba(59,130,246,.18);border-color:var(--school);}
+.tl-block.cat-work{background:rgba(16,185,129,.18);border-color:var(--work);}
+.tl-block.cat-personal{background:rgba(245,158,11,.18);border-color:var(--personal);}
+.tl-block.cat-health{background:rgba(239,68,68,.18);border-color:var(--health);}
+.tl-block.cat-other{background:rgba(139,92,246,.18);border-color:var(--other);}
+.tl-block-title{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-block-time{font-size:9px;color:rgba(226,232,240,.55);margin-top:1px;}
+.tl-block-del{position:absolute;top:4px;right:6px;opacity:0;color:var(--muted);font-size:12px;cursor:pointer;transition:opacity .15s;background:rgba(0,0,0,.3);border-radius:3px;padding:1px 4px;}
+.tl-block:hover .tl-block-del{opacity:1;}
+.tl-block-del:hover{color:var(--red)!important;}
+/* quest events on timeline */
+.tl-quest{position:absolute;left:6px;right:6px;border-radius:7px;padding:6px 9px;cursor:pointer;display:flex;align-items:center;gap:7px;border:1px solid;transition:all .15s;background:var(--s2);}
+.tl-quest:hover{filter:brightness(1.1);transform:translateX(2px);}
+.tl-quest.q-common{border-color:rgba(100,116,139,.4);}
+.tl-quest.q-rare{border-color:rgba(79,142,247,.4);}
+.tl-quest.q-epic{border-color:rgba(139,92,246,.4);}
+.tl-quest.q-legendary{border-color:rgba(240,180,41,.5);background:rgba(240,180,41,.05);}
+.tl-quest.done{opacity:.4;}
+.tl-quest.done .tl-quest-name{text-decoration:line-through;}
+.tl-quest-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;cursor:pointer;transition:all .15s;}
+.tl-quest-check:hover{border-color:var(--green);}
+.tl-quest-check.chk{background:var(--green);border-color:var(--green);color:#fff;}
+.tl-quest-name{font-size:11px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tl-quest-xp{font-size:9px;color:var(--blue);font-weight:600;flex-shrink:0;}
+.tl-quest-del{font-size:11px;color:var(--muted);cursor:pointer;padding:1px 4px;flex-shrink:0;}
+.tl-quest-del:hover{color:var(--red);}
+/* "All day" quests strip */
+.allday-strip{background:var(--s2);border-bottom:1px solid var(--border);padding:6px 8px 6px 62px;display:flex;flex-wrap:wrap;gap:4px;min-height:30px;}
+.allday-quest{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:5px;border:1px solid;font-size:10px;font-weight:500;cursor:pointer;transition:all .15s;}
+.allday-quest.q-common{background:rgba(100,116,139,.15);border-color:rgba(100,116,139,.35);}
+.allday-quest.q-rare{background:rgba(79,142,247,.15);border-color:rgba(79,142,247,.35);color:#93c5fd;}
+.allday-quest.q-epic{background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.35);color:#c4b5fd;}
+.allday-quest.q-legendary{background:rgba(240,180,41,.12);border-color:rgba(240,180,41,.4);color:#fde68a;}
+.allday-quest.done{opacity:.4;text-decoration:line-through;}
+
+/* day sidebar */
+.day-sb{width:268px;flex-shrink:0;border-left:1px solid var(--border);overflow-y:auto;padding:14px;}
+.day-sb::-webkit-scrollbar{width:3px;}
+.day-sb::-webkit-scrollbar-thumb{background:var(--border2);}
+.dsb-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
+.dsb-title{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.day-quest-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:7px;background:var(--s2);border:1px solid var(--border);margin-bottom:4px;transition:all .15s;}
+.day-quest-item:hover{border-color:rgba(79,142,247,.3);}
+.day-quest-item.done{opacity:.5;}
+.day-quest-item.done .dqi-name{text-decoration:line-through;}
+.dqi-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;cursor:pointer;transition:all .15s;}
+.dqi-check:hover{border-color:var(--green);}
+.dqi-check.chk{background:var(--green);border-color:var(--green);color:#fff;}
+.dqi-name{font-size:11px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dqi-xp{font-size:9px;color:var(--blue);font-weight:600;}
+.dqi-del{font-size:11px;color:var(--muted);cursor:pointer;padding:2px 4px;}
+.dqi-del:hover{color:var(--red);}
+.ch-mini-item{padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity .15s;}
+.ch-mini-item:last-child{border:none;}
+.ch-mini-item:hover{opacity:.8;}
+.ch-mini-top{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.ch-mini-icon{font-size:14px;}
+.ch-mini-name{font-size:11px;font-weight:600;flex:1;}
+.ch-mini-xp{font-size:9px;color:var(--blue);font-weight:700;}
+.mini-bar{height:3px;background:var(--s3);border-radius:2px;overflow:hidden;margin-bottom:2px;}
+.mini-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px;}
+.mini-txt{font-size:8px;color:var(--muted);}
+
+/* ── QUESTS VIEW ── */
+.qview{flex:1;overflow-y:auto;padding:16px 20px;}
+.qview::-webkit-scrollbar{width:3px;}
+.qview::-webkit-scrollbar-thumb{background:var(--border2);}
+.qview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.qview-title{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--gold);}
+.filter-row{display:flex;gap:4px;flex-wrap:wrap;}
+.ftab{padding:4px 11px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted2);transition:all .15s;font-family:'Outfit',sans-serif;}
+.ftab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.ftab:hover:not(.active){color:var(--text);border-color:var(--muted);}
+.q-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:7px;display:flex;align-items:center;gap:10px;transition:all .18s;position:relative;overflow:hidden;}
+.q-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:2px;}
+.q-card.q-common::before{background:var(--muted);}
+.q-card.q-rare::before{background:var(--blue);}
+.q-card.q-epic::before{background:var(--purple);}
+.q-card.q-legendary::before{background:var(--gold);}
+.q-card:hover{border-color:rgba(79,142,247,.4);transform:translateX(3px);}
+.q-card.done{opacity:.55;}
+.q-card.done .q-card-name{text-decoration:line-through;}
+.q-chk{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border2);background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;}
+.q-chk:hover{border-color:var(--green);}
+.q-chk.chk{background:var(--green);border-color:var(--green);color:#fff;}
+.q-card-info{flex:1;min-width:0;}
+.q-card-name{font-size:13px;font-weight:500;margin-bottom:4px;}
+.q-card-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.rarity-tag{font-size:8px;font-weight:700;padding:1px 6px;border-radius:3px;letter-spacing:.8px;}
+.rarity-tag.common{background:rgba(100,116,139,.2);color:var(--muted2);}
+.rarity-tag.rare{background:rgba(79,142,247,.2);color:#93c5fd;}
+.rarity-tag.epic{background:rgba(139,92,246,.2);color:#c4b5fd;}
+.rarity-tag.legendary{background:rgba(240,180,41,.2);color:#fde68a;}
+.q-date-lbl{font-size:9px;color:var(--muted);}
+.q-xp-lbl{font-size:10px;color:var(--blue);font-weight:600;}
+
+/* ── CHALLENGES ── */
+.ch-view{flex:1;overflow-y:auto;padding:16px 20px;}
+.ch-view::-webkit-scrollbar{width:3px;}
+.ch-view::-webkit-scrollbar-thumb{background:var(--border2);}
+.ch-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.ch-title{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--gold);}
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;}
+.ch-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;transition:all .2s;}
+.ch-card:hover{transform:translateY(-2px);border-color:rgba(79,142,247,.35);box-shadow:0 6px 24px rgba(0,0,0,.3);}
+.ch-card.done{opacity:.55;}
+.ch-tier-bar{position:absolute;top:0;left:0;right:0;height:2px;}
+.ch-card.tier-bronze .ch-tier-bar{background:linear-gradient(90deg,var(--bronze),#e07030);}
+.ch-card.tier-silver .ch-tier-bar{background:linear-gradient(90deg,var(--silver),#d1d5db);}
+.ch-card.tier-gold .ch-tier-bar{background:linear-gradient(90deg,var(--gold),#fbbf24);}
+.ch-icon{font-size:24px;margin-bottom:8px;}
+.ch-name{font-size:13px;font-weight:700;margin-bottom:3px;}
+.ch-desc{font-size:11px;color:var(--muted2);margin-bottom:10px;line-height:1.5;}
+.ch-meta{display:flex;align-items:center;gap:7px;margin-bottom:10px;flex-wrap:wrap;}
+.tier-tag{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.8px;}
+.tier-tag.bronze{background:rgba(205,127,50,.2);color:var(--bronze);}
+.tier-tag.silver{background:rgba(156,163,175,.2);color:var(--silver);}
+.tier-tag.gold{background:rgba(240,180,41,.2);color:var(--gold);}
+.ch-xp-tag{font-size:10px;color:var(--blue);font-weight:700;}
+.ch-dl{font-size:9px;color:var(--muted);}
+.ch-prog-wrap{margin-bottom:10px;}
+.ch-prog-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:4px;}
+.ch-prog-labels span:last-child{color:var(--text);font-weight:600;}
+.ch-prog-bg{height:5px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.ch-prog-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+.tier-bronze .ch-prog-fill{background:linear-gradient(90deg,var(--bronze),#e07030);}
+.tier-silver .ch-prog-fill{background:linear-gradient(90deg,var(--silver),#d1d5db);}
+.tier-gold .ch-prog-fill{background:linear-gradient(90deg,var(--gold),#fbbf24);}
+.ch-actions{display:flex;gap:6px;}
+.ch-btn{flex:1;padding:6px;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer;border:none;font-family:'Outfit',sans-serif;transition:all .15s;}
+.ch-log{background:var(--s2);color:var(--text);border:1px solid var(--border);}
+.ch-log:hover{border-color:var(--blue);}
+.ch-complete{background:linear-gradient(135deg,var(--green),#16a34a);color:#fff;}
+.ch-del{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25);flex:0;padding:6px 10px;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;}
+.ch-del:hover{background:rgba(239,68,68,.25);}
+.ch-done-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--green);font-weight:600;padding:6px 10px;border-radius:7px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);justify-content:center;}
+
+/* ── PROFILE VIEW ── */
+.profile-view{flex:1;overflow-y:auto;padding:20px;}
+.profile-view::-webkit-scrollbar{width:3px;}
+.profile-view::-webkit-scrollbar-thumb{background:var(--border2);}
+.profile-hero{background:linear-gradient(135deg,var(--s2),var(--s1));border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;display:flex;align-items:center;gap:20px;position:relative;overflow:hidden;}
+.profile-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(139,92,246,.08),transparent);}
+.profile-avatar-big{position:relative;width:80px;height:80px;flex-shrink:0;}
+.pab-ring{position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(var(--gold),var(--purple),var(--blue),var(--gold));animation:spin 8s linear infinite;}
+.pab-inner{position:absolute;inset:3px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:36px;}
+.profile-info{flex:1;position:relative;}
+.profile-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--gold);margin-bottom:2px;}
+.profile-class{font-size:12px;color:var(--blue);letter-spacing:.5px;margin-bottom:8px;}
+.profile-level-row{display:flex;align-items:center;gap:10px;}
+.profile-lv{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--text);}
+.profile-lv-lbl{font-size:11px;color:var(--muted);}
+/* level roadmap */
+.lvl-roadmap{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;}
+.lvl-rm-title{font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:600;color:var(--gold);margin-bottom:14px;}
+.lvl-road{display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:4px;}
+.lvl-road::-webkit-scrollbar{height:2px;}
+.lvl-road::-webkit-scrollbar-thumb{background:var(--border2);}
+.lvl-node{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:64px;}
+.lvl-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:11px;font-weight:700;border:2px solid;transition:all .2s;margin-bottom:4px;}
+.lvl-circle.past{background:var(--s3);border-color:var(--border2);color:var(--muted);}
+.lvl-circle.current{background:linear-gradient(135deg,var(--blue),var(--purple));border-color:var(--blue);color:#fff;box-shadow:0 0 14px rgba(79,142,247,.4);}
+.lvl-circle.future{background:transparent;border-color:var(--border2);color:var(--muted);}
+.lvl-circle.milestone{border-color:var(--gold);}
+.lvl-node-lbl{font-size:8px;color:var(--muted);text-align:center;white-space:nowrap;}
+.lvl-connector{flex:1;height:2px;min-width:10px;background:var(--border2);flex-shrink:1;}
+.lvl-connector.done{background:linear-gradient(90deg,var(--blue),var(--purple));}
+/* profile stats */
+.profile-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+.p-stat{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.p-stat-val{font-size:22px;font-weight:700;line-height:1;margin-bottom:2px;}
+.p-stat-lbl{font-size:9px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
+
+/* ── SHOP ── */
+.shop-view{flex:1;overflow-y:auto;padding:20px;}
+.shop-view::-webkit-scrollbar{width:3px;}
+.shop-view::-webkit-scrollbar-thumb{background:var(--border2);}
+.shop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.shop-title{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--gold);}
+.shop-wallet{background:linear-gradient(135deg,rgba(240,180,41,.15),rgba(240,180,41,.05));border:1px solid rgba(240,180,41,.3);border-radius:8px;padding:6px 14px;font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--gold);}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.shop-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px;transition:all .2s;position:relative;overflow:hidden;}
+.shop-card:hover:not(.owned){transform:translateY(-2px);border-color:rgba(79,142,247,.4);box-shadow:0 6px 20px rgba(0,0,0,.3);}
+.shop-card.owned{border-color:rgba(34,197,94,.3);}
+.shop-card.cant-afford{opacity:.55;}
+.shop-card-icon{font-size:28px;margin-bottom:10px;}
+.shop-card-name{font-size:13px;font-weight:700;margin-bottom:4px;}
+.shop-card-desc{font-size:11px;color:var(--muted2);margin-bottom:12px;line-height:1.5;}
+.shop-card-footer{display:flex;align-items:center;justify-content:space-between;}
+.shop-price{font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--gold);font-weight:700;}
+.shop-owned-tag{font-size:10px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:4px;}
+.shop-buy-btn{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:linear-gradient(135deg,var(--gold),#d97706);color:#1a0e00;font-family:'Outfit',sans-serif;transition:all .15s;}
+.shop-buy-btn:hover{filter:brightness(1.1);}
+.shop-buy-btn:disabled{opacity:.4;cursor:not-allowed;}
+.shop-section-title{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin:16px 0 10px;padding-left:2px;}
+
+/* ── BOSS FIGHT ── */
+.boss-view{flex:1;overflow-y:auto;padding:20px;}
+.boss-view::-webkit-scrollbar{width:3px;}
+.boss-arena{background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(139,92,246,.08));border:1px solid rgba(239,68,68,.3);border-radius:14px;padding:24px;margin-bottom:16px;text-align:center;position:relative;overflow:hidden;}
+.boss-arena::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(239,68,68,.12),transparent 60%);}
+.boss-sprite{font-size:72px;display:block;margin-bottom:12px;position:relative;animation:bossFloat 3s ease-in-out infinite;}
+@keyframes bossFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.boss-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#f87171;margin-bottom:4px;text-shadow:0 0 20px rgba(239,68,68,.4);}
+.boss-sub{font-size:12px;color:var(--muted2);margin-bottom:16px;}
+.boss-hp-wrap{margin-bottom:12px;}
+.boss-hp-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:5px;}
+.boss-hp-track{height:10px;background:var(--s3);border-radius:5px;overflow:hidden;border:1px solid var(--border);}
+.boss-hp-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#ef4444,#dc2626);transition:width .8s ease;position:relative;}
+.boss-hp-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);animation:sh 1.5s infinite;}
+.boss-req{font-size:13px;color:var(--muted2);margin-bottom:16px;}
+.boss-req strong{color:var(--text);}
+.boss-action-row{display:flex;gap:10px;justify-content:center;}
+.boss-attack-btn{padding:10px 28px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-family:'Outfit',sans-serif;box-shadow:0 4px 16px rgba(239,68,68,.35);transition:all .2s;}
+.boss-attack-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(239,68,68,.45);}
+.boss-attack-btn:disabled{opacity:.4;cursor:not-allowed;}
+.boss-log{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px;max-height:200px;overflow-y:auto;}
+.boss-log-entry{font-size:11px;padding:4px 0;border-bottom:1px solid var(--border);color:var(--muted2);}
+.boss-log-entry:last-child{border:none;}
+.boss-log-entry.crit{color:#fbbf24;}
+.boss-log-entry.win{color:var(--green);font-weight:700;}
+.boss-locked{text-align:center;padding:40px 20px;}
+.boss-locked-icon{font-size:52px;margin-bottom:12px;opacity:.5;}
+.boss-locked-text{font-size:14px;color:var(--muted2);line-height:1.6;}
+
+
+
+/* ── MODALS ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(8,11,20,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:200;animation:fIn .2s ease;}
+@keyframes fIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--s2);border:1px solid var(--border2);border-radius:16px;padding:22px;width:440px;max-width:92vw;max-height:88vh;overflow-y:auto;animation:mUp .25s cubic-bezier(.34,1.56,.64,1);box-shadow:0 24px 64px rgba(0,0,0,.6);}
+.modal::-webkit-scrollbar{width:3px;}
+.modal::-webkit-scrollbar-thumb{background:var(--border2);}
+@keyframes mUp{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--gold);margin-bottom:16px;}
+.fg{margin-bottom:12px;}
+.fg label{display:block;font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;}
+.fi{width:100%;padding:8px 11px;background:var(--s1);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .15s;}
+.fi:focus{border-color:var(--blue);}
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.opt-grid{display:grid;gap:5px;}
+.opt-grid.cols4{grid-template-columns:repeat(4,1fr);}
+.opt-grid.cols5{grid-template-columns:repeat(5,1fr);}
+.opt-grid.cols3{grid-template-columns:repeat(3,1fr);}
+.opt{padding:8px 5px;border-radius:8px;border:1px solid var(--border);text-align:center;cursor:pointer;transition:all .15s;font-size:9px;font-weight:600;letter-spacing:.4px;color:var(--muted2);background:var(--s1);}
+.opt:hover{color:var(--text);}
+.opt.sel-common{background:rgba(100,116,139,.25);border-color:var(--muted2);color:var(--muted2);}
+.opt.sel-rare{background:rgba(79,142,247,.25);border-color:var(--blue);color:#93c5fd;}
+.opt.sel-epic{background:rgba(139,92,246,.25);border-color:var(--purple);color:#c4b5fd;}
+.opt.sel-legendary{background:rgba(240,180,41,.2);border-color:var(--gold);color:#fde68a;}
+.opt.sel-school{background:rgba(59,130,246,.25);border-color:var(--school);color:#93c5fd;}
+.opt.sel-work{background:rgba(16,185,129,.25);border-color:var(--work);color:#6ee7b7;}
+.opt.sel-personal{background:rgba(245,158,11,.25);border-color:var(--personal);color:#fcd34d;}
+.opt.sel-health{background:rgba(239,68,68,.25);border-color:var(--health);color:#fca5a5;}
+.opt.sel-other{background:rgba(139,92,246,.25);border-color:var(--other);color:#c4b5fd;}
+.opt.sel-bronze{background:rgba(205,127,50,.25);border-color:var(--bronze);color:var(--bronze);}
+.opt.sel-silver{background:rgba(156,163,175,.25);border-color:var(--silver);color:var(--silver);}
+.opt.sel-gold{background:rgba(240,180,41,.2);border-color:var(--gold);color:var(--gold);}
+.xp-prev-box{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;}
+.xp-prev-val{font-size:15px;font-weight:700;color:var(--blue);}
+.xp-prev-lbl{font-size:10px;color:var(--muted);}
+.modal-footer{display:flex;gap:7px;margin-top:14px;}
+.modal-footer .btn{flex:1;padding:9px;justify-content:center;}
+.hint{font-size:9px;color:var(--muted);margin-top:4px;}
+.prow{display:flex;gap:6px;align-items:center;}
+.prow .fi{flex:1;}
+.punit{font-size:10px;color:var(--muted);white-space:nowrap;}
+
+/* ── POPUPS ── */
+.xp-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:400;pointer-events:none;animation:xpFloat 2.2s ease forwards;}
+@keyframes xpFloat{0%{opacity:0;transform:translate(-50%,-30%)}20%{opacity:1;transform:translate(-50%,-50%)}80%{opacity:1;transform:translate(-50%,-70%)}100%{opacity:0;transform:translate(-50%,-90%)}}
+.xp-pop-inner{background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:14px;padding:14px 24px;text-align:center;box-shadow:0 14px 40px rgba(79,142,247,.4);border:1px solid rgba(255,255,255,.12);}
+.xp-pop-amt{font-size:34px;font-weight:700;color:#fff;font-family:'Cormorant Garamond',serif;}
+.xp-pop-lbl{font-size:10px;color:rgba(255,255,255,.75);letter-spacing:2px;margin-top:2px;}
+.levelup-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:500;background:rgba(0,0,0,.8);animation:fIn .3s ease;}
+.levelup-box{background:linear-gradient(135deg,#1a1730,#1f2040);border:2px solid var(--gold);border-radius:18px;padding:32px 44px;text-align:center;box-shadow:0 0 60px rgba(240,180,41,.2);animation:mUp .4s cubic-bezier(.34,1.56,.64,1);}
+.lu-lbl{font-size:9px;color:var(--muted);letter-spacing:4px;margin-bottom:6px;}
+.lu-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:var(--gold);text-shadow:0 0 30px rgba(240,180,41,.5);margin-bottom:6px;}
+.lu-new{font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--text);margin-bottom:14px;}
+.lu-sub{font-size:11px;color:var(--muted);margin-bottom:18px;}
+/* boss victory */
+.boss-win-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:500;background:rgba(0,0,0,.85);animation:fIn .3s ease;}
+.boss-win-box{background:linear-gradient(135deg,#1a2030,#201530);border:2px solid var(--gold);border-radius:18px;padding:32px 44px;text-align:center;box-shadow:0 0 80px rgba(240,180,41,.25);animation:mUp .4s cubic-bezier(.34,1.56,.64,1);}
+
+/* ── MOBILE RESPONSIVE ── */
+@media(max-width:700px){
+  html,body{overflow:auto;}
+  .app{flex-direction:column;height:auto;min-height:100vh;}
+  .sidebar{width:100%;min-width:unset;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border);padding-top:0;overflow:visible;}
+  .logo{padding:12px 14px 10px;border-bottom:none;flex:1;}
+  .avatar-card{display:none;}
+  .sb-nav{display:flex;flex-direction:row;flex-wrap:wrap;gap:2px;padding:6px 8px;border-bottom:none;border-top:1px solid var(--border);width:100%;}
+  .sb-link{padding:7px 10px;font-size:12px;margin-bottom:0;}
+  .sb-stats,.streak-card,.boss-alert{display:none;}
+  .main{min-height:0;flex:1;}
+  .topbar{padding:0 12px;height:48px;flex-wrap:wrap;gap:6px;}
+  .nav-tabs{display:none;}
+  .date-label{min-width:120px;font-size:12px;}
+  .cal-body{padding:8px 6px;}
+  .cal-grid{gap:2px;}
+  .day-cell{min-height:64px;padding:4px;}
+  .wk-lbl{font-size:9px;}
+  .day-layout{flex-direction:column;}
+  .day-sb{width:100%;border-left:none;border-top:1px solid var(--border);}
+  .profile-stats{grid-template-columns:repeat(2,1fr);}
+  .shop-grid{grid-template-columns:1fr;}
+  .ch-grid{grid-template-columns:1fr;}
+  .modal{width:96vw;padding:16px;}
+  .opt-grid.cols4{grid-template-columns:repeat(2,1fr);}
+  .opt-grid.cols5{grid-template-columns:repeat(3,1fr);}
+  .login-box{padding:28px 22px;}
+}
+
+</style>
+<!-- Supabase SDK + Auth (must be in head so onclick handlers resolve immediately) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL='https://ggmlagireomgaptdgnqr.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdnbWxhZ2lyZW9tZ2FwdGRnbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NzkzNDIsImV4cCI6MjA4ODU1NTM0Mn0.QuZRXQ9sLbYerBjFB1ayiOuxArnwU6f7zlIH0CGUIuQ';
+const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+let _currentUser=null,_syncTimeout=null;
+
+function switchAuthTab(tab){
+  document.getElementById('tabLogin').classList.toggle('active',tab==='login');
+  document.getElementById('tabSignup').classList.toggle('active',tab==='signup');
+  document.getElementById('formLogin').style.display=tab==='login'?'block':'none';
+  document.getElementById('formSignup').style.display=tab==='signup'?'block':'none';
+  document.getElementById('authError').textContent='';
+  document.getElementById('authSuccess').textContent='';
+}
+function setAuthError(msg){document.getElementById('authError').textContent=msg;document.getElementById('authSuccess').textContent='';}
+function setAuthSuccess(msg){document.getElementById('authSuccess').textContent=msg;document.getElementById('authError').textContent='';}
+function setAuthLoading(id,on){const b=document.getElementById(id);b.disabled=on;b.textContent=on?'Please wait…':id==='loginBtn'?'Sign In →':'Create Account →';}
+
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPassword').value;
+  if(!email||!pass){setAuthError('Please fill in all fields.');return;}
+  setAuthLoading('loginBtn',true);
+  const {data,error}=await supa.auth.signInWithPassword({email,password:pass});
+  setAuthLoading('loginBtn',false);
+  if(error){setAuthError(error.message);return;}
+  onAuthSuccess(data.user);
+}
+
+async function doSignup(){
+  const name=document.getElementById('signupName').value.trim();
+  const email=document.getElementById('signupEmail').value.trim();
+  const pass=document.getElementById('signupPassword').value;
+  if(!name||!email||!pass){setAuthError('Please fill in all fields.');return;}
+  if(pass.length<6){setAuthError('Password must be at least 6 characters.');return;}
+  setAuthLoading('signupBtn',true);
+  const {data,error}=await supa.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
+  setAuthLoading('signupBtn',false);
+  if(error){setAuthError(error.message);return;}
+  localStorage.setItem('qc_nickname',name);
+  if(data.user&&data.session){
+    setAuthSuccess('Account created! Welcome 🎉');
+    setTimeout(()=>onAuthSuccess(data.user),800);
+  } else if(data.user&&!data.session){
+    setAuthSuccess('Signing you in…');
+    const {data:ld,error:le}=await supa.auth.signInWithPassword({email,password:pass});
+    if(le){setAuthSuccess('');setAuthError('Account created! Please sign in.');switchAuthTab('login');document.getElementById('loginEmail').value=email;}
+    else setTimeout(()=>onAuthSuccess(ld.user),500);
+  } else {
+    setAuthError('Something went wrong. Please try signing in.');switchAuthTab('login');
+  }
+}
+
+async function doSignOut(){
+  await supa.auth.signOut();_currentUser=null;
+  const badge=document.getElementById('userBadge');if(badge)badge.style.display='none';
+  ['modeScreen','calendarApp','focusApp'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  injectAuthScreen();
+}
+
+async function onAuthSuccess(user){
+  if(!user){setAuthError('Sign-in failed. Please try again.');return;}
+  _currentUser=user;
+  hideAuthScreen();
+  const badge=document.getElementById('userBadge');
+  if(badge){badge.style.display='flex';document.getElementById('userEmail').textContent=user.email;}
+  await loadFromCloud();
+  const last=localStorage.getItem('qc_lastMode');
+  if(last==='calendar')enterMode('calendar');
+  else if(last==='focus')enterMode('focus');
+  else document.getElementById('modeScreen').style.display='flex';
+}
+
+function setSyncStatus(s){const d=document.getElementById('syncDot');if(!d)return;d.className='sync-dot'+(s==='syncing'?' syncing':s==='offline'?' offline':'');}
+
+async function saveToCloud(){
+  if(!_currentUser||typeof S==='undefined')return;
+  setSyncStatus('syncing');
+  try{
+    const {error}=await supa.from('user_data').upsert({user_id:_currentUser.id,calendar_data:JSON.stringify(S),focus_today:localStorage.getItem('qc_focus_today')||'{}',focus_hist:localStorage.getItem('qc_focus_hist')||'[]',nickname:localStorage.getItem('qc_nickname')||'',last_mode:localStorage.getItem('qc_lastMode')||'',updated_at:new Date().toISOString()},{onConflict:'user_id'});
+    if(error)throw error;
+    setSyncStatus('synced');
+  }catch(e){console.warn('Sync:',e);setSyncStatus('offline');}
+}
+
+async function loadFromCloud(){
+  if(!_currentUser)return;setSyncStatus('syncing');
+  try{
+    const {data,error}=await supa.from('user_data').select('*').eq('user_id',_currentUser.id).single();
+    if(error&&error.code!=='PGRST116')throw error;
+    if(data){
+      if(data.calendar_data&&typeof S!=='undefined'){
+        const p=JSON.parse(data.calendar_data);S=Object.assign(S,p);
+        if(typeof SKILL_DEFS!=='undefined')S.skills=SKILL_DEFS.map(d=>{const e=S.skills?.find(x=>x.id===d.id);return e?{...d,unlocked:e.unlocked}:{...d,unlocked:false};});
+        if(typeof ACH_DEFS!=='undefined')S.achievements=ACH_DEFS.map(d=>{const e=S.achievements?.find(x=>x.id===d.id);return e?{...d,unlocked:e.unlocked}:{...d,unlocked:false};});
+        localStorage.setItem('qc4',JSON.stringify(S));
+      }
+      if(data.focus_today)localStorage.setItem('qc_focus_today',data.focus_today);
+      if(data.focus_hist)localStorage.setItem('qc_focus_hist',data.focus_hist);
+      if(data.nickname)localStorage.setItem('qc_nickname',data.nickname);
+      if(data.last_mode)localStorage.setItem('qc_lastMode',data.last_mode);
+    }
+    setSyncStatus('synced');
+    if(typeof renderAll==='function')renderAll();
+  }catch(e){console.warn('Load:',e);setSyncStatus('offline');}
+}
+
+function scheduleSyncToCloud(){clearTimeout(_syncTimeout);_syncTimeout=setTimeout(saveToCloud,2000);}
+
+function injectAuthScreen(){
+  if(document.getElementById('authScreen'))return;
+  document.body.insertAdjacentHTML('afterbegin',`<div id="authScreen" style="position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:#05080f;"><div class="auth-box"><div class="auth-logo"><div class="auth-logo-title">Scholar OS</div><div class="auth-logo-sub">YOUR ACADEMIC COMPANION</div></div><div class="auth-tabs"><button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Sign In</button><button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Create Account</button></div><div id="formLogin"><div class="auth-field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com" onkeydown="if(event.key==='Enter')doLogin()"/></div><div class="auth-field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div><button class="auth-submit" id="loginBtn" onclick="doLogin()">Sign In →</button></div><div id="formSignup" style="display:none;"><div class="auth-field"><label>Name</label><input type="text" id="signupName" placeholder="Your name"/></div><div class="auth-field"><label>Email</label><input type="email" id="signupEmail" placeholder="you@email.com" onkeydown="if(event.key==='Enter')doSignup()"/></div><div class="auth-field"><label>Password</label><input type="password" id="signupPassword" placeholder="Min. 6 characters" onkeydown="if(event.key==='Enter')doSignup()"/></div><button class="auth-submit" id="signupBtn" onclick="doSignup()">Create Account →</button></div><div class="auth-error" id="authError"></div><div class="auth-success" id="authSuccess"></div></div></div><div class="auth-user-badge" id="userBadge" style="display:none;"><div class="sync-dot" id="syncDot"></div><span id="userEmail"></span><button class="auth-signout" onclick="doSignOut()">Sign out</button></div>`);
+}
+function hideAuthScreen(){const el=document.getElementById('authScreen');if(el)el.remove();}
+
+window.addEventListener('load',()=>{
+  if(typeof save==='function'){const _ls=save;window.save=function(){_ls();scheduleSyncToCloud();};}
+  const isLocal=window.location.protocol==='file:'||window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1';
+  function goToApp(){
+    const last=localStorage.getItem('qc_lastMode');
+    if(last==='calendar')enterMode('calendar');
+    else if(last==='focus')enterMode('focus');
+    else document.getElementById('modeScreen').style.display='flex';
+  }
+  if(isLocal){ goToApp(); return; }
+  // Hosted — inject auth and check session
+  injectAuthScreen();
+  (async()=>{
+    try{
+      const {data:{session}}=await supa.auth.getSession();
+      if(session){onAuthSuccess(session.user);}
+      supa.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_OUT')_currentUser=null;});
+    }catch(e){console.warn('Auth:',e);hideAuthScreen();goToApp();}
+  })();
+});
+</script>
+</head>
+
+<!-- ══ AUTH SCREEN ══ -->
+<!-- ══ MODE SELECTOR ══ -->
+<div id="modeScreen">
+  <div class="stars" id="starField"></div>
+  <div style="position:relative;z-index:10;text-align:center;">
+    <div style="font-size:13px;color:rgba(255,255,255,.2);letter-spacing:4px;margin-bottom:16px;font-family:'Cormorant Garamond',serif;">SCHOLAR OS</div>
+    <div class="mode-title">Choose Your Mode</div>
+    <div class="mode-sub">How do you want to conquer today?</div>
+    <div class="mode-cards">
+      <div class="mode-card calendar-card" onclick="enterMode('calendar')">
+        <span class="mode-icon" style="color:#4f8ef7;">📅</span>
+        <div class="mode-card-title">QUESTCAL</div>
+        <div class="mode-card-desc">Gamified calendar with quests, XP, boss fights and skill trees</div>
+        <span class="mode-badge">CALENDAR · QUESTS · RPG</span>
+      </div>
+      <div class="mode-card focus-card" onclick="enterMode('focus')">
+        <span class="mode-icon" style="color:#a78bfa;">✈️</span>
+        <div class="mode-card-title">FOCUS MODE</div>
+        <div class="mode-card-desc">Pomodoro sessions, deep work tracking and XP rewards</div>
+        <span class="mode-badge">FOCUS · FLOW · DEEP WORK</span>
+      </div>
+    </div>
+    <div style="margin-top:40px;font-size:11px;color:rgba(255,255,255,.15);letter-spacing:1px;">Your progress saves locally · Switch anytime</div>
+  </div>
+</div>
+
+<!-- ══ FOCUS MODE APP ══ -->
+<div id="focusApp" style="display:none;position:fixed;inset:0;z-index:1500;">
+  <div class="focus-bg">
+    <div class="focus-bg-orb" style="width:600px;height:600px;top:-200px;left:-100px;background:rgba(88,28,220,.12);--d:9s;--tx:30px;--ty:20px;"></div>
+    <div class="focus-bg-orb" style="width:400px;height:400px;bottom:-100px;right:-50px;background:rgba(99,102,241,.1);--d:12s;--tx:-20px;--ty:-30px;"></div>
+    <div class="focus-bg-orb" style="width:300px;height:300px;top:40%;right:20%;background:rgba(139,92,246,.07);--d:7s;--tx:15px;--ty:10px;"></div>
+  </div>
+  <div class="focus-header">
+    <div class="focus-logo"><div class="focus-logo-dot"></div>FOCUS MODE</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div id="focusNickname" style="font-size:12px;color:rgba(255,255,255,.35);"></div>
+      <button class="focus-back-btn" onclick="switchToCalendarMode()">📅 Calendar</button>
+      <button class="focus-back-btn" onclick="showModeScreen()" style="margin-left:4px;">⊞ Modes</button>
+    </div>
+  </div>
+  <div class="focus-body">
+    <!-- Sidebar -->
+    <div class="focus-sidebar">
+      <div>
+        <div class="fs-section-title">Session Presets</div>
+        <div class="session-preset active-preset" onclick="selectPreset(this,'Classic Pomodoro',50,10,30,4,150,'🍅')">
+          <span class="sp-icon">🍅</span>
+          <div class="sp-info"><div class="sp-name">Classic Pomodoro</div><div class="sp-detail">50 min focus · 10 min break · Long at 4</div></div>
+          <span class="sp-xp">+150 XP</span>
+        </div>
+        <div class="session-preset" onclick="selectPreset(this,'Deep Work',90,15,30,2,250,'🧠')">
+          <span class="sp-icon">🧠</span>
+          <div class="sp-info"><div class="sp-name">Deep Work</div><div class="sp-detail">90 min focus · 15 min break</div></div>
+          <span class="sp-xp">+250 XP</span>
+        </div>
+        <div class="session-preset" onclick="selectPreset(this,'Quick Sprint',25,5,20,4,80,'⚡')">
+          <span class="sp-icon">⚡</span>
+          <div class="sp-info"><div class="sp-name">Quick Sprint</div><div class="sp-detail">25 min focus · 5 min break</div></div>
+          <span class="sp-xp">+80 XP</span>
+        </div>
+        <div class="session-preset" onclick="selectPreset(this,'Exam Grind',60,8,25,3,180,'📚')">
+          <span class="sp-icon">📚</span>
+          <div class="sp-info"><div class="sp-name">Exam Grind</div><div class="sp-detail">60 min focus · 8 min break</div></div>
+          <span class="sp-xp">+180 XP</span>
+        </div>
+        <!-- Custom preset -->
+        <div id="customPresetCard" style="padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.12);margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;" onclick="toggleCustomPreset()">
+            <span style="font-size:18px;">⚙️</span>
+            <div style="flex:1;font-size:12px;font-weight:600;color:rgba(255,255,255,.6);">Custom Preset</div>
+            <span id="customArrow" style="font-size:10px;color:rgba(255,255,255,.3);transition:transform .2s;">▼</span>
+          </div>
+          <div id="customPresetForm" style="display:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div>
+                <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.5px;margin-bottom:4px;">FOCUS (min)</div>
+                <input id="cpFocus" type="number" min="1" max="180" value="45" style="width:100%;padding:6px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;color:#fff;font-size:13px;font-family:'Outfit',sans-serif;outline:none;"/>
+              </div>
+              <div>
+                <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.5px;margin-bottom:4px;">BREAK (min)</div>
+                <input id="cpBreak" type="number" min="1" max="60" value="10" style="width:100%;padding:6px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;color:#fff;font-size:13px;font-family:'Outfit',sans-serif;outline:none;"/>
+              </div>
+              <div>
+                <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.5px;margin-bottom:4px;">LONG BREAK (min)</div>
+                <input id="cpLong" type="number" min="5" max="120" value="20" style="width:100%;padding:6px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;color:#fff;font-size:13px;font-family:'Outfit',sans-serif;outline:none;"/>
+              </div>
+              <div>
+                <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.5px;margin-bottom:4px;">SESSIONS</div>
+                <input id="cpSessions" type="number" min="1" max="10" value="4" style="width:100%;padding:6px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;color:#fff;font-size:13px;font-family:'Outfit',sans-serif;outline:none;"/>
+              </div>
+            </div>
+            <button onclick="applyCustomPreset()" style="width:100%;padding:8px;border-radius:8px;background:linear-gradient(135deg,rgba(139,92,246,.6),rgba(99,102,241,.6));border:1px solid rgba(139,92,246,.4);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;">Apply Custom Preset</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="fs-section-title">Today's Session Log</div>
+        <div class="focus-stats-grid">
+          <div class="focus-stat"><div class="focus-stat-val" id="fStatSessions">0</div><div class="focus-stat-lbl">Sessions</div></div>
+          <div class="focus-stat"><div class="focus-stat-val" id="fStatMins">0</div><div class="focus-stat-lbl">Min Focused</div></div>
+          <div class="focus-stat"><div class="focus-stat-val" id="fStatXP">0</div><div class="focus-stat-lbl">XP Earned</div></div>
+          <div class="focus-stat"><div class="focus-stat-val" id="fStatStreak">0</div><div class="focus-stat-lbl">🔥 Streak</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="fs-section-title">Recent Sessions</div>
+        <div class="focus-history" id="focusHistory"><div style="font-size:11px;color:rgba(255,255,255,.2);text-align:center;padding:16px 0;">No sessions yet today</div></div>
+      </div>
+    </div>
+
+    <!-- Main Timer Area -->
+    <div class="focus-main">
+      <div class="flight-path"><div class="plane-trail" id="planeTrail"><span class="plane-emoji">✈️</span></div></div>
+      <div class="focus-session-label" id="focusSessionLabel">SELECT A PRESET TO BEGIN</div>
+      <div class="phase-pills">
+        <div class="phase-pill pp-focus pp-active" id="pill-focus" onclick="switchPhase('focus')">🎯 Focus</div>
+        <div class="phase-pill pp-break" id="pill-break" onclick="switchPhase('break')">☕ Break</div>
+        <div class="phase-pill pp-long" id="pill-long" onclick="switchPhase('long')">🛋️ Long Break</div>
+      </div>
+      <div class="timer-ring-wrap">
+        <svg class="timer-svg" viewBox="0 0 280 280">
+          <defs>
+            <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#8b5cf6"/><stop offset="100%" style="stop-color:#6366f1"/>
+            </linearGradient>
+            <linearGradient id="breakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#22c55e"/><stop offset="100%" style="stop-color:#06b6d4"/>
+            </linearGradient>
+            <linearGradient id="longGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#f59e0b"/><stop offset="100%" style="stop-color:#fb923c"/>
+            </linearGradient>
+          </defs>
+          <circle class="timer-track" cx="140" cy="140" r="124"/>
+          <circle class="timer-progress" id="timerProgress" cx="140" cy="140" r="124" stroke="url(#timerGrad)" stroke-dasharray="779.2" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-center">
+          <div class="timer-time" id="timerDisplay">50:00</div>
+          <div class="timer-phase" id="timerPhaseLabel">READY</div>
+          <div class="timer-session-count" id="timerSessionCount">Session 1 of 4</div>
+        </div>
+      </div>
+      <div class="timer-controls">
+        <button class="tc-btn tc-secondary" onclick="resetTimer()" title="Reset">↺</button>
+        <button class="tc-btn tc-main" id="playPauseBtn" onclick="toggleTimer()">▶</button>
+        <button class="tc-btn tc-secondary" onclick="skipPhase()" title="Skip">⏭</button>
+      </div>
+      <div class="focus-task-chip" id="focusTaskChip" onclick="openTaskPicker()">📌 What are you working on?</div>
+    </div>
+  </div>
+</div>
+
+<!-- Task picker for focus -->
+<div id="focusTaskModal" style="display:none;position:fixed;inset:0;z-index:1800;background:rgba(6,4,15,.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+  <div style="background:#0f0c1e;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:28px;width:360px;max-width:90vw;box-shadow:0 40px 80px rgba(0,0,0,.6);">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:#fff;margin-bottom:4px;">What are you working on?</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:16px;">This helps you stay accountable</div>
+    <input id="focusTaskInput" style="width:100%;padding:11px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#fff;font-size:13px;font-family:'Outfit',sans-serif;outline:none;margin-bottom:12px;transition:border-color .2s;" placeholder="e.g. Maths Chapter 5, History essay…" onkeydown="if(event.key==='Enter')setFocusTask()"/>
+    <div style="display:flex;gap:10px;">
+      <button onclick="setFocusTask()" style="flex:1;padding:10px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">Set Task ✓</button>
+      <button onclick="closeFocusTaskModal()" style="padding:10px 18px;border-radius:10px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ QUESTCAL APP ══ -->
+<div class="app" id="calendarApp" style="display:none;position:relative;z-index:1;flex:1;height:100vh;">
+
+<!-- ══ SIDEBAR ══ -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">⚔</div>
+    <div><div class="logo-text">QUESTCAL</div><div class="logo-sub">LEVEL UP YOUR LIFE</div></div>
+  </div>
+
+  <div class="avatar-card" onclick="switchView('profile')">
+    <div class="avatar-wrap">
+      <div class="avatar-ring"></div>
+      <div class="avatar-inner" id="sbAvatar">🧙</div>
+      <div class="lv-badge" id="sbLvBadge">1</div>
+    </div>
+    <div class="avatar-name" id="sbNickname">Adventurer</div>
+    <div class="avatar-class" id="sbClass">PRODUCTIVITY MAGE</div>
+    <div class="xp-bar-wrap">
+      <div class="xp-bar-labels"><span>Experience</span><span id="sbXpTxt">0 / 100</span></div>
+      <div class="xp-track"><div class="xp-fill" id="sbXpBar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="sb-nav">
+    <button class="sb-link active" id="nav-calendar" onclick="switchView('calendar')"><span class="sb-link-icon">▦</span>Calendar</button>
+    <button class="sb-link" id="nav-day" onclick="switchView('day')"><span class="sb-link-icon">◷</span>Day Planner</button>
+    <button class="sb-link" id="nav-tasks" onclick="switchView('tasks')"><span class="sb-link-icon">◈</span>Quests</button>
+    <button class="sb-link" id="nav-challenges" onclick="switchView('challenges')"><span class="sb-link-icon">◉</span>Challenges</button>
+    <button class="sb-link" id="nav-boss" onclick="switchView('boss')"><span class="sb-link-icon">☠</span>Boss Fight</button>
+    <button class="sb-link" id="nav-profile" onclick="switchView('profile')"><span class="sb-link-icon">◎</span>Profile</button>
+    <button class="sb-link" id="nav-shop" onclick="switchView('shop')"><span class="sb-link-icon">◆</span>Shop</button>
+
+  </div>
+
+  <div class="sb-stats">
+    <div class="sb-stat"><div class="sb-stat-val" id="sbCompleted" style="color:var(--green)">0</div><div class="sb-stat-lbl">Quests</div></div>
+    <div class="sb-stat"><div class="sb-stat-val" id="sbChallenges" style="color:var(--purple)">0</div><div class="sb-stat-lbl">Challenges</div></div>
+    <div class="sb-stat"><div class="sb-stat-val" id="sbTotalXP" style="color:var(--blue)">0</div><div class="sb-stat-lbl">Total XP</div></div>
+    <div class="sb-stat"><div class="sb-stat-val" id="sbBlocks" style="color:var(--teal)">0</div><div class="sb-stat-lbl">Blocks</div></div>
+  </div>
+
+  <div class="streak-card">
+    <div class="streak-fire">🔥</div>
+    <div class="streak-info">
+      <div class="streak-num" id="sbStreak">0</div>
+      <div class="streak-lbl">DAY STREAK</div>
+    </div>
+  </div>
+  <div class="boss-alert" id="bossAlert" style="display:none" onclick="switchView('boss')">
+    <div class="boss-alert-title">⚠ BOSS AVAILABLE</div>
+    <div class="boss-alert-sub">10-day streak! Fight now!</div>
+  </div>
+
+  <!-- ⚙ Settings panel -->
+  <div style="margin:8px 12px 12px;padding:12px;background:var(--s2);border:1px solid var(--border2);border-radius:12px;">
+    <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">⚙ Settings</div>
+    <div>
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:4px;">NICKNAME</div>
+      <div style="display:flex;gap:5px;">
+        <input id="nicknameInput" style="flex:1;padding:6px 8px;background:var(--s1);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:11px;font-family:'Outfit',sans-serif;outline:none;min-width:0;" placeholder="Your name…"/>
+        <button onclick="saveNickname()" style="padding:6px 10px;border-radius:7px;background:var(--blue);color:#fff;border:none;font-size:10px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="date-nav" id="dateNavWrap">
+      <button class="arr" onclick="navigate(-1)">‹</button>
+      <div class="date-label" id="dateLabel">—</div>
+      <button class="arr" onclick="navigate(1)">›</button>
+      <button class="today-btn" onclick="goToday()">Today</button>
+    </div>
+    <div class="nav-tabs" id="topTabs">
+      <button class="nav-tab active" onclick="switchView('calendar',this)">Calendar</button>
+      <button class="nav-tab" onclick="switchView('day',this)">Day Planner</button>
+      <button class="nav-tab" onclick="switchView('tasks',this)">Quests</button>
+      <button class="nav-tab" onclick="switchView('challenges',this)">Challenges</button>
+      <button class="nav-tab" onclick="switchView('boss',this)">Boss Fight</button>
+      <button class="nav-tab" onclick="switchView('profile',this)">Profile</button>
+      <button class="nav-tab" onclick="switchView('shop',this)">Shop</button>
+
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-sm" onclick="switchToFocusMode()" style="background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.35);color:#a78bfa;font-size:11px;display:flex;align-items:center;gap:5px;" id="focusModeBtn">✈️ Focus Mode</button>
+      <button class="btn btn-teal btn-sm" id="btnBlock" style="display:none" onclick="openBlockModal()">+ Block</button>
+      <button class="btn btn-orange btn-sm" id="btnChallenge" style="display:none" onclick="openChallengeModal()">+ Challenge</button>
+      <button class="btn btn-primary btn-sm" id="btnQuest" onclick="openQuestModal()">+ Quest</button>
+    </div>
+  </div>
+
+  <!-- CALENDAR VIEW -->
+  <div class="view active" id="view-calendar">
+    <div class="cal-body">
+      <div class="wk-header">
+        <div class="wk-lbl">SUN</div><div class="wk-lbl">MON</div><div class="wk-lbl">TUE</div>
+        <div class="wk-lbl">WED</div><div class="wk-lbl">THU</div><div class="wk-lbl">FRI</div><div class="wk-lbl">SAT</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <!-- DAY PLANNER VIEW -->
+  <div class="view" id="view-day">
+    <div class="allday-strip" id="alldayStrip"></div>
+    <div class="day-layout">
+      <div class="day-tl-col">
+        <div class="day-title" id="dayTitle">—</div>
+        <div class="tl-container" id="tlContainer"></div>
+      </div>
+      <div class="day-sb">
+        <div class="dsb-card">
+          <div class="dsb-title">Today's Quests <button class="btn btn-primary btn-sm" onclick="openQuestForDay()" style="font-size:9px;padding:2px 8px">+ Add</button></div>
+          <div id="daySbQuests"></div>
+        </div>
+        <div class="dsb-card">
+          <div class="dsb-title">Active Challenges</div>
+          <div id="daySbChallenges"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESTS VIEW -->
+  <div class="view" id="view-tasks">
+    <div class="qview">
+      <div class="qview-header">
+        <div class="qview-title">Quest Log</div>
+        <div class="filter-row">
+          <button class="ftab active" onclick="filterQ('all',this)">All</button>
+          <button class="ftab" onclick="filterQ('active',this)">Active</button>
+          <button class="ftab" onclick="filterQ('done',this)">Completed</button>
+          <button class="ftab" onclick="filterQ('legendary',this)">Legendary</button>
+        </div>
+      </div>
+      <div id="questList"></div>
+    </div>
+  </div>
+
+  <!-- CHALLENGES VIEW -->
+  <div class="view" id="view-challenges">
+    <div class="ch-view">
+      <div class="ch-header">
+        <div class="ch-title">Challenges</div>
+        <div style="font-size:11px;color:var(--muted)">Complete to earn XP rewards</div>
+      </div>
+      <div class="ch-grid" id="chGrid"></div>
+    </div>
+  </div>
+
+  <!-- BOSS FIGHT VIEW -->
+  <div class="view" id="view-boss">
+    <div class="boss-view" id="bossViewContent"></div>
+  </div>
+
+  <!-- PROFILE VIEW -->
+  <div class="view" id="view-profile">
+    <div class="profile-view">
+      <div class="profile-hero">
+        <div class="profile-avatar-big">
+          <div class="pab-ring"></div>
+          <div class="pab-inner" id="profileAvatar">🧙</div>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name">Adventurer</div>
+          <div class="profile-class" id="profileClass">PRODUCTIVITY MAGE</div>
+          <div class="profile-level-row">
+            <div><div class="profile-lv" id="profileLv">1</div><div class="profile-lv-lbl">Current Level</div></div>
+            <div style="flex:1;margin-left:20px;">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Progress to next level</div>
+              <div class="xp-track" style="height:8px;"><div class="xp-fill" id="profileXpBar" style="width:0%"></div></div>
+              <div style="font-size:9px;color:var(--blue);margin-top:3px;" id="profileXpTxt">0 / 100 XP</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="lvl-roadmap">
+        <div class="lvl-rm-title">Level Roadmap</div>
+        <div class="lvl-road" id="lvlRoad"></div>
+      </div>
+      <div class="profile-stats" id="profileStats"></div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:600;color:var(--gold);margin-bottom:12px;">Achievements</div>
+        <div id="profileAch"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP VIEW -->
+  <div class="view" id="view-shop">
+    <div class="shop-view">
+      <div class="shop-header">
+        <div class="shop-title">Item Shop</div>
+        <div class="shop-wallet" id="shopWallet">0 XP</div>
+      </div>
+      <div class="shop-section-title">Skill Upgrades</div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
+  </div>
+
+
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══ MODALS ══ -->
+<!-- Quest Modal -->
+<div class="modal-overlay" id="questModal" style="display:none" onclick="if(event.target.id==='questModal')closeM('questModal')">
+  <div class="modal">
+    <div class="modal-title">Create Quest</div>
+    <div class="fg"><label>Quest Name</label><input class="fi" id="qName" placeholder="What needs to be done?"/></div>
+    <div class="fg-row fg">
+      <div><label>Due Date</label><input class="fi" type="date" id="qDate"/></div>
+      <div><label>Time (optional)</label><input class="fi" type="time" id="qTime" placeholder="e.g. 14:00"/></div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea class="fi" id="qNotes" rows="2" placeholder="Optional…" style="resize:none"></textarea></div>
+    <div class="fg">
+      <label>Rarity</label>
+      <div class="opt-grid cols4">
+        <div class="opt" data-p="common" onclick="selPrio('common')">COMMON<br><span style="color:var(--muted)">+10 XP</span></div>
+        <div class="opt" data-p="rare" onclick="selPrio('rare')">RARE<br><span style="color:var(--blue)">+25 XP</span></div>
+        <div class="opt" data-p="epic" onclick="selPrio('epic')">EPIC<br><span style="color:var(--purple)">+50 XP</span></div>
+        <div class="opt" data-p="legendary" onclick="selPrio('legendary')">LEGENDARY<br><span style="color:var(--gold)">+100 XP</span></div>
+      </div>
+    </div>
+    <div class="xp-prev-box"><span style="font-size:16px">⚡</span><div><div class="xp-prev-val" id="qXpPrev">+10 XP</div><div class="xp-prev-lbl">on completion</div></div></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('questModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addQuest()">Create Quest</button>
+    </div>
+  </div>
+</div>
+
+<!-- Block Modal -->
+<div class="modal-overlay" id="blockModal" style="display:none" onclick="if(event.target.id==='blockModal')closeM('blockModal')">
+  <div class="modal">
+    <div class="modal-title">Add Time Block</div>
+    <div class="fg"><label>Title</label><input class="fi" id="bTitle" placeholder="e.g. School, Coding Lesson…"/></div>
+    <div class="fg"><label>Date</label><input class="fi" type="date" id="bDate"/></div>
+    <div class="fg-row fg">
+      <div><label>From</label><input class="fi" type="time" id="bStart" value="09:00"/></div>
+      <div><label>To</label><input class="fi" type="time" id="bEnd" value="17:00"/></div>
+    </div>
+    <div class="fg">
+      <label>Category</label>
+      <div class="opt-grid cols5">
+        <div class="opt" data-cat="school" onclick="selCat('school')">🏫<br>SCHOOL</div>
+        <div class="opt" data-cat="work" onclick="selCat('work')">💼<br>WORK</div>
+        <div class="opt" data-cat="personal" onclick="selCat('personal')">🏠<br>PERSONAL</div>
+        <div class="opt" data-cat="health" onclick="selCat('health')">❤️<br>HEALTH</div>
+        <div class="opt" data-cat="other" onclick="selCat('other')">📌<br>OTHER</div>
+      </div>
+    </div>
+    <div class="fg"><label>Repeat</label>
+      <select class="fi" id="bRepeat">
+        <option value="none">No repeat</option>
+        <option value="daily">Every day</option>
+        <option value="weekdays">Weekdays (Mon–Fri)</option>
+        <option value="weekly">Weekly (same weekday)</option>
+      </select>
+    </div>
+    <div class="fg"><label>Notes</label><input class="fi" id="bNotes" placeholder="Location, teacher…"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('blockModal')">Cancel</button>
+      <button class="btn btn-teal" onclick="addBlock()">Add Block</button>
+    </div>
+  </div>
+</div>
+
+<!-- Challenge Modal -->
+<div class="modal-overlay" id="challengeModal" style="display:none" onclick="if(event.target.id==='challengeModal')closeM('challengeModal')">
+  <div class="modal">
+    <div class="modal-title">Create Challenge</div>
+    <div class="fg"><label>Name</label><input class="fi" id="chName" placeholder="e.g. 2 Hour Workout…"/></div>
+    <div class="fg"><label>Description</label><textarea class="fi" id="chDesc" rows="2" style="resize:none"></textarea></div>
+    <div class="fg-row fg">
+      <div><label>Icon</label><input class="fi" id="chIcon" placeholder="💪" maxlength="4" style="text-align:center;font-size:18px"/></div>
+      <div><label>Deadline</label><input class="fi" type="date" id="chDeadline"/></div>
+    </div>
+    <div class="fg">
+      <label>Tier</label>
+      <div class="opt-grid cols3">
+        <div class="opt" data-tier="bronze" onclick="selTier('bronze')">BRONZE<br><span style="color:var(--bronze)">+50 XP</span></div>
+        <div class="opt" data-tier="silver" onclick="selTier('silver')">SILVER<br><span style="color:var(--silver)">+100 XP</span></div>
+        <div class="opt" data-tier="gold" onclick="selTier('gold')">GOLD<br><span style="color:var(--gold)">+200 XP</span></div>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Progress Goal (optional)</label>
+      <div class="prow"><input class="fi" type="number" id="chGoal" placeholder="120" min="0"/><input class="fi" id="chUnit" placeholder="minutes / pages / km"/></div>
+      <div class="hint">Leave blank for simple complete/fail.</div>
+    </div>
+    <div class="xp-prev-box"><span style="font-size:16px">🏆</span><div><div class="xp-prev-val" id="chXpPrev">+50 XP</div><div class="xp-prev-lbl">on completion</div></div></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('challengeModal')">Cancel</button>
+      <button class="btn btn-orange" onclick="addChallenge()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log Modal -->
+<div class="modal-overlay" id="logModal" style="display:none" onclick="if(event.target.id==='logModal')closeM('logModal')">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-title">Log Progress</div>
+    <div id="logInfo" style="font-size:11px;color:var(--muted);margin-bottom:10px"></div>
+    <div class="fg"><label id="logLabel">Amount</label>
+      <div class="prow"><input class="fi" type="number" id="logAmt" min="0"/><div class="punit" id="logUnit"></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('logModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitLog()">Log</button>
+    </div>
+  </div>
+</div>
+
+<!-- XP Popup -->
+<div class="xp-popup" id="xpPop" style="display:none">
+  <div class="xp-pop-inner">
+    <div class="xp-pop-amt" id="xpPopAmt">+50</div>
+    <div class="xp-pop-lbl">XP GAINED</div>
+  </div>
+</div>
+
+<!-- Level Up -->
+<div class="levelup-overlay" id="luOverlay" style="display:none">
+  <div class="levelup-box">
+    <div class="lu-lbl">CONGRATULATIONS</div>
+    <div class="lu-title" id="luTitle">LEVEL UP!</div>
+    <div class="lu-new" id="luNew">You are now Level 2</div>
+    <div class="lu-sub">Check the shop for new upgrades!</div>
+    <button class="btn btn-primary" onclick="document.getElementById('luOverlay').style.display='none'" style="width:100%;justify-content:center;padding:10px">Continue →</button>
+  </div>
+</div>
+
+<!-- Boss Win -->
+<div class="boss-win-overlay" id="bossWinOverlay" style="display:none">
+  <div class="boss-win-box">
+    <div style="font-size:60px;margin-bottom:12px">🏆</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--gold);margin-bottom:6px;">BOSS DEFEATED!</div>
+    <div style="font-size:14px;color:var(--muted2);margin-bottom:20px" id="bossWinMsg">You earned 500 XP!</div>
+    <button class="btn btn-primary" onclick="document.getElementById('bossWinOverlay').style.display='none'" style="width:100%;justify-content:center;padding:10px">Claim Reward →</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════
+const XP_P={common:10,rare:25,epic:50,legendary:100};
+const XP_T={bronze:50,silver:100,gold:200};
+const XP_LVL=l=>Math.floor(100*Math.pow(1.4,l-1));
+const HOURS_START=6,HOURS_END=24,HOUR_PX=64;
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const CLASSES=['PRODUCTIVITY MAGE','TASK WARRIOR','QUEST HUNTER','FOCUS MONK','DEADLINE SLAYER','CHAOS WIZARD'];
+const AVATARS={1:'🧙',5:'⚔️',10:'🦅',15:'🔥',20:'👑',25:'🌟',30:'💫'};
+
+const LVL_MILESTONES={5:'Shop Unlocked',10:'Boss Fight',15:'Epic Quests',20:'Legend',25:'Mythic',30:'Ascended'};
+
+const SKILL_DEFS=[
+  {id:'double_xp',name:'Double XP',icon:'⚡',desc:'Earn 2× XP for Common quests',cost:50},
+  {id:'streak_shield',name:'Streak Shield',icon:'🛡',desc:'Protect streak if you miss 1 day',cost:80},
+  {id:'rare_boost',name:'Rare Mastery',icon:'💠',desc:'+10 bonus XP for Rare quests',cost:120},
+  {id:'challenge_boost',name:'Challenge Rush',icon:'🏆',desc:'+25 XP on every challenge',cost:180},
+  {id:'epic_boost',name:'Epic Surge',icon:'🌀',desc:'+25 bonus XP for Epic quests',cost:200},
+  {id:'boss_slayer',name:'Boss Slayer',icon:'☠',desc:'+100 bonus XP on boss kills',cost:300},
+];
+
+const ACH_DEFS=[
+  {id:'first',name:'First Steps',icon:'🌱',desc:'Complete your first quest',check:s=>s.completed>=1},
+  {id:'ten',name:'Seasoned Hero',icon:'⚔️',desc:'Complete 10 quests',check:s=>s.completed>=10},
+  {id:'lv5',name:'Apprentice',icon:'📚',desc:'Reach Level 5',check:s=>s.level>=5},
+  {id:'legendary1',name:'Legend Born',icon:'👑',desc:'Complete a Legendary quest',check:s=>s.legendaryDone>=1},
+  {id:'streak3',name:'On a Roll',icon:'🔥',desc:'3-day streak',check:s=>s.streak>=3},
+  {id:'streak7',name:'Week Warrior',icon:'🗓',desc:'7-day streak',check:s=>s.streak>=7},
+  {id:'streak10',name:'Boss Hunter',icon:'☠',desc:'10-day streak — boss available!',check:s=>s.streak>=10},
+  {id:'ch1',name:'Trial Seeker',icon:'🏋',desc:'Complete your first challenge',check:s=>s.challengesDone>=1},
+  {id:'boss1',name:'Dragon Slayer',icon:'🐉',desc:'Defeat your first boss',check:s=>s.bossKills>=1},
+  {id:'shop1',name:'Shopper',icon:'🛍',desc:'Buy your first upgrade',check:s=>s.spentXp>=1},
+];
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let S=JSON.parse(localStorage.getItem('qc4')||'null')||{
+  xp:0,totalXp:0,level:1,spentXp:0,
+  completed:0,challengesDone:0,blocksAdded:0,streak:0,legendaryDone:0,
+  bossKills:0,bossHp:100,lastDate:null,bossLog:[],
+  tasks:[],blocks:[],challenges:[],
+  skills:SKILL_DEFS.map(s=>({...s,unlocked:false})),
+  achievements:ACH_DEFS.map(a=>({...a,unlocked:false})),
+};
+S.skills=SKILL_DEFS.map(d=>{const e=S.skills?.find(x=>x.id===d.id);return e?{...d,unlocked:e.unlocked}:{...d,unlocked:false};});
+S.achievements=ACH_DEFS.map(d=>{const e=S.achievements?.find(x=>x.id===d.id);return e?{...d,unlocked:e.unlocked}:{...d,unlocked:false};});
+S.blocks=S.blocks||[];S.challenges=S.challenges||[];S.bossLog=S.bossLog||[];
+['challengesDone','blocksAdded','bossKills','bossHp','spentXp'].forEach(k=>{if(!S[k])S[k]=k==='bossHp'?100:0;});
+const save=()=>localStorage.setItem(window._saveKey||'qc4',JSON.stringify(S));
+
+// ══════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════
+let curView='calendar';
+let calDate=new Date();
+let dayDate=new Date();
+let qFilter='all';
+let sPrio='common',sCat='school',sTier='bronze';
+let logChId=null;
+
+function switchView(v,tabEl){
+  curView=v;
+  document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
+  const sbEl=document.getElementById('nav-'+v);
+  if(sbEl)sbEl.classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(tabEl)tabEl.classList.add('active');
+  else{
+    const tabs=document.querySelectorAll('.nav-tab');
+    const idx={calendar:0,day:1,tasks:2,challenges:3,boss:4,profile:5,shop:6}[v];
+    if(tabs[idx])tabs[idx].classList.add('active');
+  }
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v)?.classList.add('active');
+  document.getElementById('dateNavWrap').style.display=['calendar','day'].includes(v)?'flex':'none';
+  document.getElementById('btnBlock').style.display=v==='day'?'flex':'none';
+  document.getElementById('btnChallenge').style.display=v==='challenges'?'flex':'none';
+  document.getElementById('btnQuest').style.display=['challenges','boss','profile','shop'].includes(v)?'none':'flex';
+  if(v==='calendar')renderCal();
+  else if(v==='day')renderDay();
+  else if(v==='tasks')renderQuests();
+  else if(v==='challenges')renderChallenges();
+  else if(v==='boss')renderBoss();
+  else if(v==='profile')renderProfile();
+  else if(v==='shop')renderShop();
+}
+
+function navigate(d){
+  if(curView==='calendar'){calDate=new Date(calDate.getFullYear(),calDate.getMonth()+d,1);renderCal();}
+  else if(curView==='day'){dayDate=new Date(dayDate.getFullYear(),dayDate.getMonth(),dayDate.getDate()+d);renderDay();}
+}
+function goToday(){calDate=new Date();dayDate=new Date();curView==='calendar'?renderCal():renderDay();}
+
+const dk=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const t2m=t=>{const[h,m]=t.split(':').map(Number);return h*60+m;};
+const calcDur=(s,e)=>{const m=t2m(e)-t2m(s);return m<60?`${m}m`:`${Math.floor(m/60)}h${m%60?` ${m%60}m`:''}`;};
+
+// ══════════════════════════════════════════════════
+//  CALENDAR
+// ══════════════════════════════════════════════════
+function renderCal(){
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  document.getElementById('dateLabel').textContent=`${MONTHS[m]} ${y}`;
+  const grid=document.getElementById('calGrid');grid.innerHTML='';
+  const today=new Date();today.setHours(0,0,0,0);
+  const first=new Date(y,m,1),last=new Date(y,m+1,0),sd=first.getDay();
+  for(let i=0;i<sd;i++)grid.appendChild(mkCell(new Date(y,m,-sd+i+1),true));
+  for(let d=1;d<=last.getDate();d++)grid.appendChild(mkCell(new Date(y,m,d),false));
+  const rem=42-(sd+last.getDate());
+  for(let i=1;i<=rem;i++)grid.appendChild(mkCell(new Date(y,m+1,i),true));
+}
+
+function mkCell(date,other){
+  const today=new Date();today.setHours(0,0,0,0);
+  const key=dk(date),isToday=date.getTime()===today.getTime();
+  const tasks=S.tasks.filter(t=>t.date===key);
+  const blocks=getBlocksForDate(key);
+  const cell=document.createElement('div');
+  cell.className='day-cell'+(other?' other':'')+(isToday?' today':'')+(tasks.length||blocks.length?' has-stuff':'');
+  cell.onclick=()=>{if(!other){dayDate=new Date(date);switchView('day');}};
+  cell.innerHTML=`<div class="day-n"><span>${date.getDate()}</span>${isToday?'<div class="today-pip"></div>':''}</div>`;
+  const items=[...blocks.slice(0,2).map(b=>({t:'b',o:b})),...tasks.slice(0,2).map(t=>({t:'t',o:t}))].slice(0,4);
+  items.forEach(item=>{
+    const el=document.createElement('div');
+    if(item.t==='b'){
+      const b=item.o;el.className=`cal-pill b-${b.category}`;
+      el.innerHTML=`<span>·</span>${b.startTime} ${b.title}`;
+    }else{
+      const t=item.o;el.className=`cal-pill q-${t.priority}${t.done?' q-done':''}`;
+      el.innerHTML=`<div class="cal-dot dot-${t.priority}"></div>${t.name}`;
+      el.onclick=e=>{e.stopPropagation();toggleTask(t.id);};
+    }
+    cell.appendChild(el);
+  });
+  const tot=tasks.length+blocks.length;
+  if(tot>4){const m=document.createElement('div');m.className='cal-more';m.textContent=`+${tot-4} more`;cell.appendChild(m);}
+  return cell;
+}
+
+// ══════════════════════════════════════════════════
+//  DAY PLANNER
+// ══════════════════════════════════════════════════
+function getBlocksForDate(key){
+  const date=new Date(key+'T00:00:00'),dow=date.getDay();
+  return S.blocks.filter(b=>{
+    if(b.repeat==='none')return b.date===key;
+    if(b.repeat==='daily')return b.date<=key;
+    if(b.repeat==='weekdays')return b.date<=key&&dow>=1&&dow<=5;
+    if(b.repeat==='weekly'){const bd=new Date(b.date+'T00:00:00');return b.date<=key&&bd.getDay()===dow;}
+    return false;
+  }).sort((a,b)=>a.startTime.localeCompare(b.startTime));
+}
+
+function renderDay(){
+  const key=dk(dayDate),dn=DS[dayDate.getDay()];
+  document.getElementById('dateLabel').textContent=`${dn}, ${MONTHS[dayDate.getMonth()]} ${dayDate.getDate()}`;
+  document.getElementById('dayTitle').textContent=`${dn} · ${MONTHS[dayDate.getMonth()]} ${dayDate.getDate()}, ${dayDate.getFullYear()}`;
+
+  const blocks=getBlocksForDate(key);
+  // Quests with a time appear on timeline; quests without time appear in allday strip
+  const dayTasks=S.tasks.filter(t=>t.date===key);
+  const timedTasks=dayTasks.filter(t=>t.time);
+  const untimedTasks=dayTasks.filter(t=>!t.time);
+
+  // All-day strip (untimed quests)
+  const strip=document.getElementById('alldayStrip');strip.innerHTML='';
+  if(!untimedTasks.length){strip.innerHTML='<span style="font-size:10px;color:var(--muted);padding:0 0 0 0">No untimed quests</span>';}
+  untimedTasks.forEach(t=>{
+    const el=document.createElement('div');
+    el.className=`allday-quest q-${t.priority}${t.done?' done':''}`;
+    el.innerHTML=`<div class="tl-quest-check${t.done?' chk':''}" onclick="toggleTask('${t.id}');event.stopPropagation()">${t.done?'✓':''}</div>${t.name}<span style="font-size:9px;color:var(--blue);font-weight:700;margin-left:4px">+${getXp(t)}</span>`;
+    el.title=`Click check to complete · ${t.priority} · +${getXp(t)} XP`;
+    strip.appendChild(el);
+  });
+
+  // Timeline
+  const container=document.getElementById('tlContainer');container.innerHTML='';
+  container.style.position='relative';
+  container.style.height=((HOURS_END-HOURS_START)*HOUR_PX)+'px';
+
+  // Hour rows
+  for(let h=HOURS_START;h<HOURS_END;h++){
+    const row=document.createElement('div');
+    row.className='tl-hour-row';
+    row.style.position='absolute';
+    row.style.top=((h-HOURS_START)*HOUR_PX)+'px';
+    row.style.left='0';row.style.right='0';row.style.height=HOUR_PX+'px';
+    const lbl=document.createElement('div');
+    lbl.className='tl-lbl';lbl.textContent=`${String(h).padStart(2,'0')}:00`;
+    row.appendChild(lbl);
+    container.appendChild(row);
+  }
+
+  // Block events
+  blocks.forEach(b=>{
+    const startM=t2m(b.startTime),endM=t2m(b.endTime);
+    const top=(startM-HOURS_START*60)*(HOUR_PX/60);
+    const height=Math.max(24,(endM-startM)*(HOUR_PX/60));
+    const dur=calcDur(b.startTime,b.endTime);
+    const ev=document.createElement('div');
+    ev.className=`tl-block cat-${b.category}`;
+    ev.style.top=top+'px';ev.style.height=height+'px';
+    const showSub=height>=32;
+    ev.innerHTML=`<div class="tl-block-title">${b.title}</div>${showSub?`<div class="tl-block-time">${b.startTime}–${b.endTime} · ${dur}${b.notes?' · '+b.notes:''}</div>`:''}<div class="tl-block-del" onclick="deleteBlock('${b.id}');event.stopPropagation()">✕</div>`;
+    container.appendChild(ev);
+  });
+
+  // Timed quest events on timeline
+  timedTasks.forEach(t=>{
+    const startM=t2m(t.time);
+    const top=(startM-HOURS_START*60)*(HOUR_PX/60);
+    const height=36;
+    const ev=document.createElement('div');
+    ev.className=`tl-quest q-${t.priority}${t.done?' done':''}`;
+    ev.style.top=top+'px';ev.style.height=height+'px';
+    ev.innerHTML=`<div class="tl-quest-check${t.done?' chk':''}" onclick="toggleTask('${t.id}');event.stopPropagation()">${t.done?'✓':''}</div><div class="tl-quest-name">${t.name}</div><div class="tl-quest-xp">+${getXp(t)}</div><div class="tl-quest-del" onclick="deleteTask('${t.id}');event.stopPropagation()">✕</div>`;
+    container.appendChild(ev);
+  });
+
+  // Sidebar quests
+  const dsq=document.getElementById('daySbQuests');dsq.innerHTML='';
+  if(!dayTasks.length){dsq.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0">No quests today</div>';}
+  dayTasks.forEach(t=>{
+    const div=document.createElement('div');
+    div.className=`day-quest-item${t.done?' done':''}`;
+    div.innerHTML=`<div class="dqi-check${t.done?' chk':''}" onclick="toggleTask('${t.id}')">${t.done?'✓':''}</div><div class="dqi-name">${t.time?`[${t.time}] `:''} ${t.name}</div><div class="dqi-xp">+${getXp(t)}</div><div class="dqi-del" onclick="deleteTask('${t.id}')">✕</div>`;
+    dsq.appendChild(div);
+  });
+
+  // Sidebar challenges
+  const dsc=document.getElementById('daySbChallenges');dsc.innerHTML='';
+  const active=S.challenges.filter(c=>!c.done);
+  if(!active.length){dsc.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0">No active challenges</div>';}
+  active.slice(0,5).forEach(c=>{
+    const pct=c.goal?Math.min(100,Math.round((c.progress||0)/c.goal*100)):0;
+    const div=document.createElement('div');div.className='ch-mini-item';
+    div.innerHTML=`<div class="ch-mini-top"><span class="ch-mini-icon">${c.icon||'🏋'}</span><div class="ch-mini-name">${c.name}</div><div class="ch-mini-xp">+${XP_T[c.tier]}</div></div>${c.goal?`<div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div><div class="mini-txt">${c.progress||0}/${c.goal} ${c.unit||''}</div>`:''}`;
+    div.onclick=()=>c.goal?openLogModal(c.id):completeChallenge(c.id);
+    dsc.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  BLOCKS
+// ══════════════════════════════════════════════════
+function openBlockModal(){
+  document.getElementById('bTitle').value='';document.getElementById('bNotes').value='';
+  document.getElementById('bDate').value=dk(dayDate);
+  document.getElementById('bStart').value='09:00';document.getElementById('bEnd').value='17:00';
+  document.getElementById('bRepeat').value='none';selCat('school');
+  document.getElementById('blockModal').style.display='flex';
+  setTimeout(()=>document.getElementById('bTitle').focus(),80);
+}
+function selCat(cat){
+  sCat=cat;
+  document.querySelectorAll('[data-cat]').forEach(el=>{el.className='opt';if(el.dataset.cat===cat)el.classList.add(`sel-${cat}`);});
+}
+function addBlock(){
+  const title=document.getElementById('bTitle').value.trim();
+  if(!title){document.getElementById('bTitle').style.borderColor='var(--red)';return;}
+  const s=document.getElementById('bStart').value,e=document.getElementById('bEnd').value;
+  if(s>=e){alert('End time must be after start time.');return;}
+  S.blocks.push({id:Date.now().toString(),title,category:sCat,date:document.getElementById('bDate').value,startTime:s,endTime:e,repeat:document.getElementById('bRepeat').value,notes:document.getElementById('bNotes').value.trim()});
+  S.blocksAdded++;save();closeM('blockModal');checkAch();renderAll();
+}
+function deleteBlock(id){S.blocks=S.blocks.filter(b=>b.id!==id);save();renderAll();}
+
+// ══════════════════════════════════════════════════
+//  QUESTS
+// ══════════════════════════════════════════════════
+function openQuestModal(){
+  document.getElementById('qDate').value=dk(new Date());
+  document.getElementById('qTime').value='';
+  document.getElementById('qName').value='';document.getElementById('qNotes').value='';
+  selPrio('common');document.getElementById('questModal').style.display='flex';
+  setTimeout(()=>document.getElementById('qName').focus(),80);
+}
+function openQuestForDay(){
+  document.getElementById('qDate').value=dk(dayDate);
+  document.getElementById('qTime').value='';
+  document.getElementById('qName').value='';document.getElementById('qNotes').value='';
+  selPrio('common');document.getElementById('questModal').style.display='flex';
+  setTimeout(()=>document.getElementById('qName').focus(),80);
+}
+function selPrio(p){
+  sPrio=p;
+  document.querySelectorAll('[data-p]').forEach(el=>{el.className='opt';if(el.dataset.p===p)el.classList.add(`sel-${p}`);});
+  document.getElementById('qXpPrev').textContent=`+${XP_P[p]} XP`;
+}
+function addQuest(){
+  const name=document.getElementById('qName').value.trim();
+  if(!name){document.getElementById('qName').style.borderColor='var(--red)';return;}
+  S.tasks.push({id:Date.now().toString(),name,date:document.getElementById('qDate').value,time:document.getElementById('qTime').value||null,notes:document.getElementById('qNotes').value.trim(),priority:sPrio,done:false,created:new Date().toISOString()});
+  save();closeM('questModal');renderAll();
+}
+function getXp(t){
+  let b=XP_P[t.priority];
+  if(t.priority==='common'&&S.skills.find(s=>s.id==='double_xp')?.unlocked)b*=2;
+  if(t.priority==='rare'&&S.skills.find(s=>s.id==='rare_boost')?.unlocked)b+=10;
+  if(t.priority==='epic'&&S.skills.find(s=>s.id==='epic_boost')?.unlocked)b+=25;
+  return b;
+}
+function toggleTask(id){
+  const t=S.tasks.find(x=>x.id===id);if(!t)return;
+  t.done=!t.done;
+  if(t.done){const xp=getXp(t);addXp(xp);S.completed++;if(t.priority==='legendary')S.legendaryDone++;updStreak();showXp(xp);checkAch();}
+  else{const xp=getXp(t);S.xp=Math.max(0,S.xp-xp);S.totalXp=Math.max(0,S.totalXp-xp);S.completed=Math.max(0,S.completed-1);}
+  save();renderAll();
+}
+function deleteTask(id){S.tasks=S.tasks.filter(t=>t.id!==id);save();renderAll();}
+
+function renderQuests(){
+  const list=document.getElementById('questList');list.innerHTML='';
+  let tasks=[...S.tasks].sort((a,b)=>a.date.localeCompare(b.date));
+  if(qFilter==='active')tasks=tasks.filter(t=>!t.done);
+  else if(qFilter==='done')tasks=tasks.filter(t=>t.done);
+  else if(qFilter==='legendary')tasks=tasks.filter(t=>t.priority==='legendary');
+  if(!tasks.length){list.innerHTML='<div style="text-align:center;color:var(--muted);padding:48px 0;font-size:13px">No quests here. Create one!</div>';return;}
+  tasks.forEach(t=>{
+    const xp=getXp(t);const card=document.createElement('div');
+    card.className=`q-card q-${t.priority}${t.done?' done':''}`;
+    card.innerHTML=`<div class="q-chk${t.done?' chk':''}" onclick="toggleTask('${t.id}');event.stopPropagation()">${t.done?'✓':''}</div><div class="q-card-info"><div class="q-card-name">${t.name}</div><div class="q-card-meta"><div class="rarity-tag ${t.priority}">${t.priority.toUpperCase()}</div>${t.date?`<div class="q-date-lbl">📅 ${t.date}${t.time?` ${t.time}`:''}</div>`:''}<div class="q-xp-lbl">+${xp} XP</div></div>${t.notes?`<div style="font-size:10px;color:var(--muted);margin-top:4px">${t.notes}</div>`:''}</div><div style="color:var(--muted);cursor:pointer;font-size:13px;padding:2px 7px;border-radius:5px;transition:color .15s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'" onclick="deleteTask('${t.id}');event.stopPropagation()">✕</div>`;
+    list.appendChild(card);
+  });
+}
+function filterQ(f,el){qFilter=f;document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderQuests();}
+
+// ══════════════════════════════════════════════════
+//  CHALLENGES
+// ══════════════════════════════════════════════════
+function openChallengeModal(){
+  document.getElementById('chName').value='';document.getElementById('chDesc').value='';
+  document.getElementById('chIcon').value='💪';document.getElementById('chGoal').value='';
+  document.getElementById('chUnit').value='';document.getElementById('chDeadline').value='';
+  selTier('bronze');document.getElementById('challengeModal').style.display='flex';
+  setTimeout(()=>document.getElementById('chName').focus(),80);
+}
+function selTier(t){
+  sTier=t;
+  document.querySelectorAll('[data-tier]').forEach(el=>{el.className='opt';if(el.dataset.tier===t)el.classList.add(`sel-${t}`);});
+  document.getElementById('chXpPrev').textContent=`+${XP_T[t]} XP`;
+}
+function addChallenge(){
+  const name=document.getElementById('chName').value.trim();
+  if(!name){document.getElementById('chName').style.borderColor='var(--red)';return;}
+  S.challenges.push({id:Date.now().toString(),name,desc:document.getElementById('chDesc').value.trim(),icon:document.getElementById('chIcon').value.trim()||'💪',tier:sTier,goal:parseInt(document.getElementById('chGoal').value)||null,unit:document.getElementById('chUnit').value.trim(),deadline:document.getElementById('chDeadline').value,progress:0,done:false,created:new Date().toISOString()});
+  save();closeM('challengeModal');renderChallenges();
+}
+function renderChallenges(){
+  const grid=document.getElementById('chGrid');grid.innerHTML='';
+  if(!S.challenges.length){grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:40px;text-align:center;grid-column:1/-1">No challenges yet. Hit "+ Challenge" to start!</div>';return;}
+  S.challenges.forEach(c=>{
+    const pct=c.goal?Math.min(100,Math.round((c.progress||0)/c.goal*100)):0;
+    const bonus=S.skills.find(s=>s.id==='challenge_boost')?.unlocked?25:0;
+    const xp=XP_T[c.tier]+bonus;
+    const card=document.createElement('div');card.className=`ch-card tier-${c.tier}${c.done?' done':''}`;
+    const actHtml=c.done?`<div class="ch-done-badge">✓ Completed · +${xp} XP</div>`:`<div class="ch-actions">${c.goal?`<button class="ch-btn ch-log" onclick="openLogModal('${c.id}')">Log Progress</button>`:''}<button class="ch-btn ch-complete" onclick="completeChallenge('${c.id}')">Complete</button><button class="ch-del" onclick="deleteChallenge('${c.id}')">✕</button></div>`;
+    card.innerHTML=`<div class="ch-tier-bar"></div><div class="ch-icon">${c.icon}</div><div class="ch-name">${c.name}</div>${c.desc?`<div class="ch-desc">${c.desc}</div>`:''}<div class="ch-meta"><div class="tier-tag ${c.tier}">${c.tier.toUpperCase()}</div><div class="ch-xp-tag">+${xp} XP</div>${c.deadline?`<div class="ch-dl">📅 ${c.deadline}</div>`:''}</div>${c.goal?`<div class="ch-prog-wrap"><div class="ch-prog-labels"><span>Progress</span><span>${c.progress||0} / ${c.goal} ${c.unit||''}</span></div><div class="ch-prog-bg"><div class="ch-prog-fill" style="width:${pct}%"></div></div></div>`:''} ${actHtml}`;
+    grid.appendChild(card);
+  });
+}
+function openLogModal(id){
+  logChId=id;const c=S.challenges.find(x=>x.id===id);if(!c||!c.goal)return;
+  document.getElementById('logInfo').textContent=`${c.name} · ${c.progress||0}/${c.goal} ${c.unit||''} so far`;
+  document.getElementById('logLabel').textContent=`Add (${c.unit||'units'})`;
+  document.getElementById('logUnit').textContent=c.unit||'';
+  document.getElementById('logAmt').value='';
+  document.getElementById('logModal').style.display='flex';
+  setTimeout(()=>document.getElementById('logAmt').focus(),80);
+}
+function submitLog(){
+  const c=S.challenges.find(x=>x.id===logChId);if(!c)return;
+  c.progress=Math.min(c.goal,(c.progress||0)+(parseFloat(document.getElementById('logAmt').value)||0));
+  save();closeM('logModal');renderChallenges();if(curView==='day')renderDay();
+}
+function completeChallenge(id){
+  const c=S.challenges.find(x=>x.id===id);if(!c||c.done)return;
+  c.done=true;const bonus=S.skills.find(s=>s.id==='challenge_boost')?.unlocked?25:0;
+  const xp=XP_T[c.tier]+bonus;addXp(xp);S.challengesDone++;updStreak();showXp(xp);checkAch();
+  save();renderChallenges();if(curView==='day')renderDay();
+}
+function deleteChallenge(id){S.challenges=S.challenges.filter(c=>c.id!==id);save();renderChallenges();}
+
+// ══════════════════════════════════════════════════
+//  BOSS FIGHT
+// ══════════════════════════════════════════════════
+const BOSSES=[
+  {name:'Shadow Procrastinator',sprite:'👾',desc:'The demon of delay and distraction',maxHp:100,reward:500,minStreak:10},
+  {name:'Chaos Overlord',sprite:'🐲',desc:'Master of overwhelming to-do lists',maxHp:150,reward:800,minStreak:20},
+  {name:'Void Serpent',sprite:'🐍',desc:'Ancient enemy of focus and clarity',maxHp:200,reward:1200,minStreak:30},
+];
+function currentBoss(){return BOSSES.find(b=>b.minStreak<=S.streak&&S.bossHp>0)||null;}
+
+function renderBoss(){
+  const el=document.getElementById('bossViewContent');el.innerHTML='';
+  const boss=currentBoss();
+  if(!boss){
+    el.innerHTML=`<div class="boss-locked"><div class="boss-locked-icon">🔒</div><div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--muted2);margin-bottom:12px">Boss Locked</div><div class="boss-locked-text">Reach a <strong style="color:var(--text)">10-day streak</strong> of completing quests to unlock your first boss fight.<br><br>Current streak: <strong style="color:var(--gold)">${S.streak} day${S.streak!==1?'s':''}</strong></div></div>`;
+    return;
+  }
+  const pct=Math.round(S.bossHp/boss.maxHp*100);
+  const canFight=S.streak>=boss.minStreak;
+  el.innerHTML=`
+    <div class="boss-arena">
+      <span class="boss-sprite">${boss.sprite}</span>
+      <div class="boss-name">${boss.name}</div>
+      <div class="boss-sub">${boss.desc}</div>
+      <div class="boss-hp-wrap">
+        <div class="boss-hp-labels"><span>Boss HP</span><span>${S.bossHp} / ${boss.maxHp}</span></div>
+        <div class="boss-hp-track"><div class="boss-hp-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="boss-req">Requires: <strong>${boss.minStreak}-day streak</strong> to attack · Your streak: <strong style="color:var(--gold)">${S.streak}</strong></div>
+      <div class="boss-action-row">
+        <button class="boss-attack-btn" ${canFight?'':'disabled'} onclick="attackBoss()">⚔ Attack!</button>
+      </div>
+    </div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:8px">BATTLE LOG</div>
+    <div class="boss-log" id="bossLogEl"></div>
+  `;
+  const logEl=document.getElementById('bossLogEl');
+  (S.bossLog||[]).slice().reverse().forEach(entry=>{
+    const div=document.createElement('div');div.className=`boss-log-entry${entry.crit?' crit':''}${entry.win?' win':''}`;
+    div.textContent=entry.msg;logEl.appendChild(div);
+  });
+}
+
+function attackBoss(){
+  const boss=currentBoss();if(!boss)return;
+  // damage = random 10–30, crit 20% chance doubles
+  let dmg=Math.floor(Math.random()*21)+10;
+  const crit=Math.random()<0.2;if(crit)dmg*=2;
+  S.bossHp=Math.max(0,S.bossHp-dmg);
+  const entry={msg:`You dealt ${dmg}${crit?' (CRITICAL HIT!)':''} damage! Boss HP: ${S.bossHp}/${boss.maxHp}`,crit};
+  S.bossLog.push(entry);if(S.bossLog.length>20)S.bossLog.shift();
+
+  if(S.bossHp<=0){
+    const bonus=S.skills.find(s=>s.id==='boss_slayer')?.unlocked?100:0;
+    const reward=boss.reward+bonus;
+    S.bossKills++;S.bossHp=boss.maxHp;// reset for next fight
+    addXp(reward);showXp(reward);
+    S.bossLog.push({msg:`BOSS DEFEATED! You earned ${reward} XP!`,win:true});
+    checkAch();save();
+    document.getElementById('bossWinMsg').textContent=`You earned ${reward} XP!`;
+    document.getElementById('bossWinOverlay').style.display='flex';
+  }
+  save();renderBoss();renderSidebar();
+}
+
+// ══════════════════════════════════════════════════
+//  PROFILE
+// ══════════════════════════════════════════════════
+function renderProfile(){
+  updAvatar();
+  document.getElementById('profileLv').textContent=S.level;
+  document.getElementById('profileClass').textContent=CLASSES[Math.min(S.level-1,CLASSES.length-1)%CLASSES.length];
+  const need=XP_LVL(S.level);
+  document.getElementById('profileXpBar').style.width=Math.min(100,S.xp/need*100)+'%';
+  document.getElementById('profileXpTxt').textContent=`${S.xp} / ${need} XP`;
+
+  // Level roadmap
+  const road=document.getElementById('lvlRoad');road.innerHTML='';
+  const startLv=Math.max(1,S.level-2);
+  const endLv=startLv+12;
+  for(let lv=startLv;lv<=endLv;lv++){
+    const node=document.createElement('div');node.className='lvl-node';
+    const state=lv<S.level?'past':lv===S.level?'current':'future';
+    const isMilestone=LVL_MILESTONES[lv];
+    const circle=document.createElement('div');
+    circle.className=`lvl-circle ${state}${isMilestone?' milestone':''}`;
+    circle.textContent=lv;
+    const lbl=document.createElement('div');
+    lbl.className='lvl-node-lbl';lbl.textContent=isMilestone||`${XP_LVL(lv)} XP`;
+    node.appendChild(circle);node.appendChild(lbl);road.appendChild(node);
+    if(lv<endLv){const con=document.createElement('div');con.className=`lvl-connector${lv<S.level?' done':''}`;road.appendChild(con);}
+  }
+
+  // Stats
+  const ps=document.getElementById('profileStats');ps.innerHTML='';
+  const stats=[
+    {val:S.totalXp,lbl:'Total XP',color:'var(--blue)'},
+    {val:S.completed,lbl:'Quests Done',color:'var(--green)'},
+    {val:S.challengesDone,lbl:'Challenges',color:'var(--purple)'},
+    {val:S.bossKills,lbl:'Boss Kills',color:'var(--red)'},
+    {val:S.streak,lbl:'Day Streak',color:'var(--gold)'},
+    {val:S.blocks.length,lbl:'Time Blocks',color:'var(--teal)'},
+    {val:S.legendaryDone,lbl:'Legendary',color:S.legendary},
+    {val:S.spentXp,lbl:'XP Spent',color:'var(--orange)'},
+  ];
+  stats.forEach(st=>{
+    const div=document.createElement('div');div.className='p-stat';
+    div.innerHTML=`<div class="p-stat-val" style="color:${st.color}">${st.val}</div><div class="p-stat-lbl">${st.lbl}</div>`;
+    ps.appendChild(div);
+  });
+
+  // Achievements
+  const pa=document.getElementById('profileAch');pa.innerHTML='';
+  S.achievements.forEach(a=>{
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);';
+    div.className=a.unlocked?'':'';
+    div.style.opacity=a.unlocked?'1':'0.3';
+    div.style.filter=a.unlocked?'':'grayscale(1)';
+    div.innerHTML=`<div style="font-size:18px">${a.icon}</div><div><div style="font-size:12px;font-weight:600">${a.name}</div><div style="font-size:10px;color:var(--muted)">${a.desc}</div></div>${a.unlocked?'<div style="margin-left:auto;font-size:10px;color:var(--green);font-weight:600">✓ Unlocked</div>':''}`;
+    pa.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  SHOP
+// ══════════════════════════════════════════════════
+function renderShop(){
+  const avail=S.totalXp-S.spentXp;
+  document.getElementById('shopWallet').textContent=`${avail} XP available`;
+  const grid=document.getElementById('shopGrid');grid.innerHTML='';
+  S.skills.forEach(sk=>{
+    const canAfford=avail>=sk.cost;
+    const card=document.createElement('div');
+    card.className=`shop-card${sk.unlocked?' owned':!canAfford?' cant-afford':''}`;
+    card.innerHTML=`<div class="shop-card-icon">${sk.icon}</div><div class="shop-card-name">${sk.name}</div><div class="shop-card-desc">${sk.desc}</div><div class="shop-card-footer"><div class="shop-price">${sk.cost} XP</div>${sk.unlocked?'<div class="shop-owned-tag">✓ Owned</div>':`<button class="shop-buy-btn" ${!canAfford?'disabled':''} onclick="buySkill('${sk.id}')">Buy</button>`}</div>`;
+    grid.appendChild(card);
+  });
+}
+function buySkill(id){
+  const sk=S.skills.find(s=>s.id===id);if(!sk||sk.unlocked)return;
+  const avail=S.totalXp-S.spentXp;
+  if(avail<sk.cost){alert(`Need ${sk.cost} XP. You have ${avail}.`);return;}
+  sk.unlocked=true;S.spentXp+=sk.cost;checkAch();save();renderShop();renderSidebar();
+}
+
+
+// ══════════════════════════════════════════════════
+//  XP / LEVELING
+// ══════════════════════════════════════════════════
+function addXp(amt){
+  S.xp+=amt;S.totalXp+=amt;
+  while(S.xp>=XP_LVL(S.level)){S.xp-=XP_LVL(S.level);S.level++;setTimeout(showLevelUp,500);}
+}
+function updStreak(){
+  const today=dk(new Date());if(S.lastDate===today)return;
+  const yest=dk(new Date(Date.now()-86400000));
+  S.streak=(S.lastDate===yest||!S.lastDate)?S.streak+1:1;
+  S.lastDate=today;
+}
+let xpTimer;
+function showXp(amt){
+  const p=document.getElementById('xpPop');
+  document.getElementById('xpPopAmt').textContent=`+${amt}`;
+  p.style.display='block';clearTimeout(xpTimer);
+  xpTimer=setTimeout(()=>p.style.display='none',2200);
+}
+function showLevelUp(){
+  document.getElementById('luTitle').textContent=`LEVEL ${S.level}!`;
+  document.getElementById('luNew').textContent=`You are now Level ${S.level}`;
+  document.getElementById('luOverlay').style.display='flex';
+  updAvatar();
+}
+function updAvatar(){
+  let em='🧙';
+  for(const[t,e]of Object.entries(AVATARS)){if(S.level>=Number(t))em=e;}
+  document.getElementById('sbAvatar').textContent=em;
+  document.getElementById('profileAvatar').textContent=em;
+}
+
+// ══════════════════════════════════════════════════
+//  ACHIEVEMENTS
+// ══════════════════════════════════════════════════
+function checkAch(){
+  const st={completed:S.completed,level:S.level,streak:S.streak,legendaryDone:S.legendaryDone,challengesDone:S.challengesDone,blocksAdded:S.blocksAdded,bossKills:S.bossKills,spentXp:S.spentXp};
+  S.achievements.forEach(a=>{if(!a.unlocked&&ACH_DEFS.find(d=>d.id===a.id)?.check(st))a.unlocked=true;});
+  save();
+}
+
+// ══════════════════════════════════════════════════
+//  SIDEBAR
+// ══════════════════════════════════════════════════
+function renderSidebar(){
+  const need=XP_LVL(S.level);
+  const pct=Math.min(100,S.xp/need*100);
+  document.getElementById('sbXpBar').style.width=pct+'%';
+  document.getElementById('sbXpTxt').textContent=`${S.xp} / ${need}`;
+  document.getElementById('sbLvBadge').textContent=S.level;
+  document.getElementById('sbCompleted').textContent=S.completed;
+  document.getElementById('sbChallenges').textContent=S.challengesDone;
+  document.getElementById('sbTotalXP').textContent=S.totalXp;
+  document.getElementById('sbBlocks').textContent=S.blocksAdded;
+  document.getElementById('sbStreak').textContent=S.streak;
+  document.getElementById('sbClass').textContent=CLASSES[Math.min(S.level-1,CLASSES.length-1)%CLASSES.length];
+  updAvatar();
+  // Boss alert
+  document.getElementById('bossAlert').style.display=S.streak>=10&&S.bossHp>0?'block':'none';
+}
+
+// ══════════════════════════════════════════════════
+//  MODALS
+// ══════════════════════════════════════════════════
+function closeM(id){document.getElementById(id).style.display='none';}
+
+// ══════════════════════════════════════════════════
+//  RENDER ALL
+// ══════════════════════════════════════════════════
+function renderAll(){
+  renderSidebar();
+  if(curView==='calendar')renderCal();
+  else if(curView==='day')renderDay();
+  else if(curView==='tasks')renderQuests();
+  else if(curView==='challenges')renderChallenges();
+  else if(curView==='boss')renderBoss();
+  else if(curView==='profile')renderProfile();
+  else if(curView==='shop')renderShop();
+}
+
+// ══════════════════════════════════════════════════
+//  KEYBOARD
+// ══════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  const tag=document.activeElement.tagName;
+  if(e.key==='Escape'){['questModal','blockModal','challengeModal','logModal'].forEach(id=>{if(document.getElementById(id).style.display!=='none')closeM(id);});}
+  if(['INPUT','TEXTAREA','SELECT'].includes(tag))return;
+  if(e.key==='n')openQuestModal();
+  if(e.key==='b'&&curView==='day')openBlockModal();
+  if(e.key==='c'&&curView==='challenges')openChallengeModal();
+});
+
+
+// ══════════════════════════════════════════════════
+//  SETTINGS — NICKNAME (localStorage only)
+// ══════════════════════════════════════════════════
+
+function getNickname(){
+  return localStorage.getItem('qc_nickname')||'Adventurer';
+}
+
+function saveNickname(){
+  const n=document.getElementById('nicknameInput').value.trim();
+  if(!n)return;
+  localStorage.setItem('qc_nickname',n);
+  document.getElementById('sbNickname').textContent=n;
+  const btn=document.querySelector('#nicknameInput + button');
+  if(btn){
+    const orig=btn.textContent;
+    btn.textContent='✓ Saved!';
+    btn.style.background='linear-gradient(135deg,#22c55e,#16a34a)';
+    setTimeout(()=>{btn.textContent=orig;btn.style.background='';},2000);
+  }
+}
+
+// Init nickname on load
+(function(){
+  const ni=getNickname();
+  const nInp=document.getElementById('nicknameInput');
+  if(nInp)nInp.value=ni==='Adventurer'?'':ni;
+  document.getElementById('sbNickname').textContent=ni;
+})();
+
+
+// ══════════════════════════════════════════════════
+//  MODE SELECTOR
+// ══════════════════════════════════════════════════
+function buildStars(){
+  const sf=document.getElementById('starField');
+  if(!sf)return;
+  for(let i=0;i<120;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    const sz=Math.random()*2.5+0.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:${Math.random()*4}s;opacity:${Math.random()*.6+.1};`;
+    sf.appendChild(s);
+  }
+}
+buildStars();
+
+function enterMode(mode){
+  document.getElementById('modeScreen').style.display='none';
+  if(mode==='calendar'){
+    document.getElementById('calendarApp').style.display='flex';
+    localStorage.setItem('qc_lastMode','calendar');
+  } else {
+    document.getElementById('focusApp').style.display='flex';
+    document.getElementById('focusApp').style.flexDirection='column';
+    initFocusStats();
+    const nick=localStorage.getItem('qc_nickname')||'';
+    if(nick)document.getElementById('focusNickname').textContent='👤 '+nick;
+    const saved=JSON.parse(localStorage.getItem('qc_custom_preset')||'null');
+    if(saved){document.getElementById('cpFocus').value=saved.focus;document.getElementById('cpBreak').value=saved.brk;document.getElementById('cpLong').value=saved.longBrk;document.getElementById('cpSessions').value=saved.sessions;}
+    localStorage.setItem('qc_lastMode','focus');
+  }
+}
+
+function enterMode(mode){
+  document.getElementById('modeScreen').style.display='none';
+  if(mode==='calendar'){
+    document.getElementById('calendarApp').style.display='flex';
+    localStorage.setItem('qc_lastMode','calendar');
+  } else {
+    document.getElementById('focusApp').style.display='flex';
+    document.getElementById('focusApp').style.flexDirection='column';
+    initFocusStats();
+    const nick=localStorage.getItem('qc_nickname')||'';
+    if(nick)document.getElementById('focusNickname').textContent='👤 '+nick;
+    const saved=JSON.parse(localStorage.getItem('qc_custom_preset')||'null');
+    if(saved){document.getElementById('cpFocus').value=saved.focus;document.getElementById('cpBreak').value=saved.brk;document.getElementById('cpLong').value=saved.longBrk;document.getElementById('cpSessions').value=saved.sessions;}
+    localStorage.setItem('qc_lastMode','focus');
+  }
+}
+
+// Switch TO focus without touching timer or calendar state
+function switchToFocusMode(){
+  document.getElementById('calendarApp').style.display='none';
+  document.getElementById('focusApp').style.display='flex';
+  document.getElementById('focusApp').style.flexDirection='column';
+  initFocusStats();
+  const nick=localStorage.getItem('qc_nickname')||'';
+  if(nick)document.getElementById('focusNickname').textContent='👤 '+nick;
+  localStorage.setItem('qc_lastMode','focus');
+  updateFocusTimerBadge(); // show live timer if running
+}
+
+// Switch BACK to calendar without touching timer
+function switchToCalendarMode(){
+  document.getElementById('focusApp').style.display='none';
+  document.getElementById('calendarApp').style.display='flex';
+  localStorage.setItem('qc_lastMode','calendar');
+  renderSidebar(); renderAll(); // refresh XP display
+}
+
+function showModeScreen(){
+  // Don't stop timer — just hide both UIs
+  document.getElementById('calendarApp').style.display='none';
+  document.getElementById('focusApp').style.display='none';
+  document.getElementById('modeScreen').style.display='flex';
+}
+
+// Show a live timer badge in Focus Mode header when running
+function updateFocusTimerBadge(){
+  let badge=document.getElementById('focusLiveBadge');
+  if(!badge){
+    badge=document.createElement('div');
+    badge.id='focusLiveBadge';
+    badge.style.cssText='font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.35);color:#a78bfa;font-family:"Outfit",sans-serif;';
+    document.getElementById('focusNickname').insertAdjacentElement('afterend',badge);
+  }
+  badge.style.display=FT.running?'block':'none';
+  if(FT.running){
+    const m=Math.floor(FT.remainSecs/60).toString().padStart(2,'0');
+    const s=(FT.remainSecs%60).toString().padStart(2,'0');
+    badge.textContent=`⏱ ${m}:${s} running`;
+  }
+}
+
+// Show live focus badge in CALENDAR topbar when timer is running
+function updateCalendarFocusBadge(){
+  const btn=document.getElementById('focusModeBtn');
+  if(!btn)return;
+  if(FT.running){
+    const m=Math.floor(FT.remainSecs/60).toString().padStart(2,'0');
+    const s=(FT.remainSecs%60).toString().padStart(2,'0');
+    btn.textContent=`⏱ ${m}:${s}`;
+    btn.style.background='rgba(139,92,246,.3)';
+    btn.style.borderColor='rgba(139,92,246,.6)';
+  } else {
+    btn.textContent='✈️ Focus Mode';
+    btn.style.background='rgba(139,92,246,.15)';
+    btn.style.borderColor='rgba(139,92,246,.35)';
+  }
+}
+
+// Grant XP to the Calendar profile from Focus sessions
+function awardFocusXpToProfile(amount){
+  addXp(amount);
+  save();
+  renderSidebar();
+  // If calendar is visible, show the XP popup
+  if(document.getElementById('calendarApp').style.display!=='none'){
+    showXp(amount);
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  FOCUS MODE — TIMER ENGINE
+// ══════════════════════════════════════════════════
+  preset: {name:'Classic Pomodoro', focus:50, brk:10, longBrk:30, sessions:4, xp:150, icon:'🍅'},
+  phase: 'focus',
+  sessionNum: 1,
+  running: false,
+  totalSecs: 50*60,
+  remainSecs: 50*60,
+  interval: null,
+  task: '',
+  todaySessions: 0,
+  todayMins: 0,
+  todayXP: 0,
+};
+
+// Load today's focus stats
+function initFocusStats(){
+  const today=new Date().toDateString();
+  const fd=JSON.parse(localStorage.getItem('qc_focus_today')||'{}');
+  if(fd.date===today){
+    FT.todaySessions=fd.sessions||0;
+    FT.todayMins=fd.mins||0;
+    FT.todayXP=fd.xp||0;
+  } else {
+    FT.todaySessions=0;FT.todayMins=0;FT.todayXP=0;
+    localStorage.setItem('qc_focus_today',JSON.stringify({date:today,sessions:0,mins:0,xp:0}));
+  }
+  updateFocusSidebar();
+  renderFocusHistory();
+}
+
+function saveFocusStats(){
+  const today=new Date().toDateString();
+  localStorage.setItem('qc_focus_today',JSON.stringify({date:today,sessions:FT.todaySessions,mins:FT.todayMins,xp:FT.todayXP}));
+}
+
+function updateFocusSidebar(){
+  document.getElementById('fStatSessions').textContent=FT.todaySessions;
+  document.getElementById('fStatMins').textContent=FT.todayMins;
+  document.getElementById('fStatXP').textContent=FT.todayXP;
+  // Streak = total sessions as proxy
+  document.getElementById('fStatStreak').textContent=FT.todaySessions;
+}
+
+function renderFocusHistory(){
+  const hist=JSON.parse(localStorage.getItem('qc_focus_hist')||'[]');
+  const today=new Date().toDateString();
+  const todayItems=hist.filter(h=>h.date===today).slice(-8).reverse();
+  const el=document.getElementById('focusHistory');
+  if(!todayItems.length){el.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.2);text-align:center;padding:16px 0;">No sessions yet today</div>';return;}
+  el.innerHTML=todayItems.map(h=>`
+    <div class="fh-item">
+      <div class="fh-dot" style="background:${h.phase==='focus'?'#8b5cf6':h.phase==='break'?'#22c55e':'#f59e0b'};"></div>
+      <div class="fh-text">${h.task||h.preset} · ${h.mins}min</div>
+      <div class="fh-time">${h.time}</div>
+    </div>`).join('');
+}
+
+function addFocusHistoryItem(mins, phase){
+  const hist=JSON.parse(localStorage.getItem('qc_focus_hist')||'[]');
+  hist.push({date:new Date().toDateString(),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),preset:FT.preset.name,task:FT.task,mins,phase});
+  if(hist.length>100)hist.shift();
+  localStorage.setItem('qc_focus_hist',JSON.stringify(hist));
+  renderFocusHistory();
+}
+
+function selectPreset(el, name, focus, brk, longBrk, sessions, xp, icon){
+  document.querySelectorAll('.session-preset').forEach(p=>p.classList.remove('active-preset'));
+  el.classList.add('active-preset');
+  FT.preset={name,focus,brk,longBrk,sessions,xp,icon};
+  FT.sessionNum=1;
+  pauseTimer();
+  setPhase('focus');
+  document.getElementById('focusSessionLabel').textContent=name.toUpperCase()+' · '+icon;
+  document.getElementById('playPauseBtn').textContent='▶';
+}
+
+function setPhase(phase){
+  FT.phase=phase;
+  FT.running=false;
+  clearInterval(FT.interval);
+  let secs;
+  if(phase==='focus') secs=FT.preset.focus*60;
+  else if(phase==='break') secs=FT.preset.brk*60;
+  else secs=FT.preset.longBrk*60;
+  FT.totalSecs=secs;
+  FT.remainSecs=secs;
+  updateTimerDisplay();
+  updateTimerRing();
+  // Update pills
+  ['focus','break','long'].forEach(p=>{
+    const pill=document.getElementById('pill-'+p);
+    if(pill)pill.classList.toggle('pp-active',p===phase);
+  });
+  // Update labels
+  const labels={focus:'FOCUS TIME',break:'SHORT BREAK',long:'LONG BREAK'};
+  document.getElementById('timerPhaseLabel').textContent=labels[phase];
+  document.getElementById('timerSessionCount').textContent=`Session ${FT.sessionNum} of ${FT.preset.sessions}`;
+  // Ring color
+  const grads={focus:'url(#timerGrad)',break:'url(#breakGrad)',long:'url(#longGrad)'};
+  document.getElementById('timerProgress').setAttribute('stroke',grads[phase]);
+}
+
+function switchPhase(phase){
+  if(FT.running){if(!confirm('Switch phase? Current timer will reset.'))return;}
+  setPhase(phase);
+}
+
+function toggleTimer(){
+  if(FT.running){pauseTimer();}
+  else{startTimer();}
+}
+
+function startTimer(){
+  FT.running=true;
+  document.getElementById('playPauseBtn').textContent='⏸';
+  FT.interval=setInterval(()=>{
+    FT.remainSecs--;
+    updateTimerDisplay();
+    updateTimerRing();
+    updateCalendarFocusBadge(); // live countdown in calendar topbar
+    updateFocusTimerBadge();    // live badge in focus header
+    if(FT.remainSecs<=0){onPhaseComplete();}
+  },1000);
+  // Launch plane animation during focus
+  if(FT.phase==='focus'){launchPlane();}
+}
+
+function pauseTimer(){
+  FT.running=false;
+  clearInterval(FT.interval);
+  const btn=document.getElementById('playPauseBtn');
+  if(btn)btn.textContent='▶';
+  updateCalendarFocusBadge();
+  updateFocusTimerBadge();
+}
+
+function resetTimer(){
+  pauseTimer();
+  setPhase(FT.phase);
+}
+
+function skipPhase(){
+  pauseTimer();
+  onPhaseComplete(true);
+}
+
+function launchPlane(){
+  const trail=document.getElementById('planeTrail');
+  if(!trail)return;
+  const dur=FT.preset.focus*60;
+  trail.style.setProperty('--fly-dur', dur+'s');
+  trail.style.top=(20+Math.random()*40)+'%';
+  trail.classList.remove('flying');
+  void trail.offsetWidth;
+  trail.classList.add('flying');
+}
+
+function onPhaseComplete(skipped){
+  pauseTimer();
+  const wasMinutes=Math.round((FT.totalSecs-FT.remainSecs)/60)||Math.round(FT.totalSecs/60);
+  if(FT.phase==='focus'&&!skipped){
+    FT.todaySessions++;
+    FT.todayMins+=FT.preset.focus;
+    FT.todayXP+=FT.preset.xp;
+    saveFocusStats();
+    updateFocusSidebar();
+    addFocusHistoryItem(FT.preset.focus,'focus');
+    awardFocusXpToProfile(FT.preset.xp); // ← XP flows into calendar profile
+    showSessionComplete();
+    return;
+  }
+  // after break, advance session
+  if(FT.phase==='break'||FT.phase==='long'){
+    addFocusHistoryItem(wasMinutes, FT.phase);
+    FT.sessionNum=Math.min(FT.sessionNum+1,FT.preset.sessions);
+    setPhase('focus');
+    return;
+  }
+  // skipped focus — go to break
+  if(skipped&&FT.phase==='focus'){
+    const isLong=(FT.sessionNum%FT.preset.sessions===0);
+    setPhase(isLong?'long':'break');
+  }
+}
+
+function showSessionComplete(){
+  const overlay=document.createElement('div');
+  overlay.className='session-complete';
+  overlay.id='sessionCompleteOverlay';
+  overlay.innerHTML=`
+    <div class="sc-box">
+      <span class="sc-emoji">🎉</span>
+      <div class="sc-title">Session Complete!</div>
+      <div class="sc-sub">${FT.preset.name} · ${FT.preset.focus} minutes of pure focus${FT.task?' on "'+FT.task+'"':''}</div>
+      <div class="sc-xp">+${FT.preset.xp} XP</div>
+      <div>
+        <button class="sc-btn sc-btn-primary" onclick="startBreakFromComplete()">☕ Take a Break</button>
+        <button class="sc-btn sc-btn-secondary" onclick="closeSessionComplete()">✕ Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  showXPToast('+'+FT.preset.xp+' XP earned!');
+}
+
+function startBreakFromComplete(){
+  closeSessionComplete();
+  const isLong=(FT.sessionNum%FT.preset.sessions===0);
+  setPhase(isLong?'long':'break');
+  startTimer();
+}
+
+function closeSessionComplete(){
+  const el=document.getElementById('sessionCompleteOverlay');
+  if(el)el.remove();
+}
+
+function updateTimerDisplay(){
+  const m=Math.floor(FT.remainSecs/60).toString().padStart(2,'0');
+  const s=(FT.remainSecs%60).toString().padStart(2,'0');
+  document.getElementById('timerDisplay').textContent=m+':'+s;
+  // Update page title when running
+  if(FT.running)document.title=`${m}:${s} — Focus Mode`;
+  else document.title='Scholar OS';
+}
+
+function updateTimerRing(){
+  const pct=FT.remainSecs/FT.totalSecs;
+  const circ=779.2;
+  document.getElementById('timerProgress').setAttribute('stroke-dashoffset',(1-pct)*circ);
+}
+
+function showXPToast(msg){
+  const t=document.createElement('div');
+  t.className='xp-toast';
+  t.textContent='✨ '+msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),300);},2500);
+}
+
+// Task picker
+function openTaskPicker(){
+  const m=document.getElementById('focusTaskModal');
+  m.style.display='flex';
+  setTimeout(()=>document.getElementById('focusTaskInput').focus(),50);
+}
+function closeFocusTaskModal(){
+  document.getElementById('focusTaskModal').style.display='none';
+}
+function setFocusTask(){
+  const t=document.getElementById('focusTaskInput').value.trim();
+  FT.task=t;
+  const chip=document.getElementById('focusTaskChip');
+  chip.textContent=t?'📌 '+t:'📌 What are you working on?';
+  chip.classList.toggle('task-chip-active',!!t);
+  closeFocusTaskModal();
+}
+
+// ══════════════════════════════════════════════════
+//  CUSTOM PRESET
+// ══════════════════════════════════════════════════
+function toggleCustomPreset(){
+  const form=document.getElementById('customPresetForm');
+  const arrow=document.getElementById('customArrow');
+  const open=form.style.display==='none';
+  form.style.display=open?'block':'none';
+  arrow.style.transform=open?'rotate(180deg)':'rotate(0deg)';
+}
+
+function applyCustomPreset(){
+  const focus=parseInt(document.getElementById('cpFocus').value)||45;
+  const brk=parseInt(document.getElementById('cpBreak').value)||10;
+  const longBrk=parseInt(document.getElementById('cpLong').value)||20;
+  const sessions=parseInt(document.getElementById('cpSessions').value)||4;
+  const xp=Math.round(focus*2.5);
+  // Deactivate other presets
+  document.querySelectorAll('.session-preset').forEach(p=>p.classList.remove('active-preset'));
+  document.getElementById('customPresetCard').style.background='rgba(139,92,246,.1)';
+  document.getElementById('customPresetCard').style.borderColor='rgba(139,92,246,.4)';
+  // Save to localStorage
+  localStorage.setItem('qc_custom_preset',JSON.stringify({focus,brk,longBrk,sessions}));
+  FT.preset={name:'Custom',focus,brk,longBrk,sessions,xp,icon:'⚙️'};
+  FT.sessionNum=1;
+  pauseTimer();
+  setPhase('focus');
+  document.getElementById('focusSessionLabel').textContent=`CUSTOM · ⚙️ ${focus}min focus · ${brk}min break`;
+  document.getElementById('playPauseBtn').textContent='▶';
+  // Collapse form
+  toggleCustomPreset();
+}
+
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+renderAll();
+
+
+</script>
+</body>
+</html>
